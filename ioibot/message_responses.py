@@ -2,9 +2,9 @@ import logging
 
 from nio import AsyncClient, MatrixRoom, RoomMessageText
 
-from my_project_name.chat_functions import send_text_to_room
-from my_project_name.config import Config
-from my_project_name.storage import Storage
+from ioibot.chat_functions import send_text_to_room
+from ioibot.config import Config
+from ioibot.storage import Storage
 
 logger = logging.getLogger(__name__)
 
