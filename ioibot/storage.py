@@ -1,4 +1,5 @@
 import logging
+import pandas as pd
 from typing import Any, Dict
 
 # The latest migration version of the database.
@@ -12,9 +13,10 @@ latest_migration_version = 0
 
 logger = logging.getLogger(__name__)
 
+from ioibot.config import Config
 
 class Storage:
-    def __init__(self, database_config: Dict[str, str]):
+    def __init__(self, database_config: Dict[str, str], config: Config):
         """Setup the database.
 
         Runs an initial setup or migrations depending on whether a database file has already
@@ -31,7 +33,11 @@ class Storage:
         )
         self.cursor = self.conn.cursor()
         self.db_type = database_config["type"]
-
+        self.config = Config
+        self.teams = pd.read_csv(config.team_url)
+        self.leaders = pd.read_csv(config.leader_url)
+        self.contestants = pd.read_csv(config.contestant_url)
+        self.contestants.sort_values('ContestantCode')
         # Try to check the current migration version
         migration_level = 0
         try:

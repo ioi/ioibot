@@ -105,6 +105,10 @@ class Config:
 
         self.command_prefix = self._get_cfg(["command_prefix"], default="!c") + " "
 
+        self.team_url = self._get_cfg(["datasource", "team_url"])
+        self.leader_url = self._get_cfg(["datasource", "leader_url"])
+        self.contestant_url = self._get_cfg(["datasource", "contestant_url"])
+
     def _get_cfg(
         self,
         path: List[str],

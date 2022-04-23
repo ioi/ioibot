@@ -37,7 +37,7 @@ async def main():
     config = Config(config_path)
 
     # Configure the database
-    store = Storage(config.database)
+    store = Storage(config.database, config)
 
     # Configuration options for the AsyncClient
     client_config = AsyncClientConfig(
