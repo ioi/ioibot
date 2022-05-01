@@ -31,6 +31,10 @@ class Storage:
         self.conn = self._get_database_connection(
             database_config["type"], database_config["connection_string"]
         )
+        self.vconn = self._get_database_connection(
+            database_config["type"], "ioibot.db"
+        )
+
         self.cursor = self.conn.cursor()
         self.db_type = database_config["type"]
         self.config = Config
@@ -38,6 +42,7 @@ class Storage:
         self.leaders = pd.read_csv(config.leader_url)
         self.contestants = pd.read_csv(config.contestant_url)
         self.contestants.sort_values('ContestantCode')
+        
         # Try to check the current migration version
         migration_level = 0
         try:
