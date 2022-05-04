@@ -1,6 +1,6 @@
 from nio import AsyncClient, MatrixRoom, RoomMessageText
 
-from ioibot.chat_functions import react_to_event, send_text_to_room
+from ioibot.chat_functions import react_to_event, send_text_to_room, make_pill
 from ioibot.config import Config
 from ioibot.storage import Storage
 
@@ -175,12 +175,12 @@ class Command:
           response += f"  \n  \n{role}:"
           for index, member in curteam.iterrows():
             if member['Role'] == role:
-              response += f"  \n- @{member['UserID']}:{self.config.homeserver_url[8:]} ({member['Name']})"
+              response += f"  \n- {make_pill(member['UserID'], self.config.homeserver_url)} ({member['Name']})"
 
         response += "  \n  \nContestants:"
         for index, row in self.store.contestants.iterrows():
             if row['ContestantCode'].startswith(teamcode):
-                response += f"  \n- {row['ContestantCode']} ({row['FirstName']} {row['LastName']})"
+                response += f"  \n- `{row['ContestantCode']}` ({row['FirstName']} {row['LastName']})"
 
         await send_text_to_room(self.client, self.room.room_id, response)
 
@@ -203,7 +203,7 @@ class Command:
             )
             await send_text_to_room(self.client, self.room.room_id, text)
             return
-            
+
         elif self.args[0].lower() == 'new':
             input_poll = ' '.join(self.args[1:])
             input_poll = input_poll.split('"')[1::2]
@@ -211,7 +211,7 @@ class Command:
             # wrong format: need more arguments, no double quotes, etc.
             if(len(input_poll) < 2):
                 await send_text_to_room(
-                    self.client, self.room.room_id, 
+                    self.client, self.room.room_id,
                     "Command format is invalid. Send `poll` to see all commands."
                 )
                 return
@@ -231,7 +231,7 @@ class Command:
             # no id given
             if len(self.args) < 2:
                 await send_text_to_room(
-                    self.client, self.room.room_id, 
+                    self.client, self.room.room_id,
                     "Command format is invalid. Send `poll` to see all commands."
                 )
                 return
@@ -252,7 +252,7 @@ class Command:
             # wrong format: need more arguments, no double quotes, etc.
             if(len(input_poll) < 2):
                 await send_text_to_room(
-                    self.client, self.room.room_id, 
+                    self.client, self.room.room_id,
                     "Command format is invalid. Send `poll` to see all commands."
                 )
                 return
@@ -262,7 +262,7 @@ class Command:
                 [input_poll[0], input_poll[1], poll_id]
             )
             id_exist = cursor.execute('''SELECT changes()''').fetchall()[0][0]
-            
+
             if not id_exist:
                 await send_text_to_room(
                     self.client, self.room.room_id,
@@ -306,7 +306,7 @@ class Command:
             # no id given
             if len(self.args) < 2:
                 await send_text_to_room(
-                    self.client, self.room.room_id, 
+                    self.client, self.room.room_id,
                     "Command format is invalid. Send `poll` to see all commands."
                 )
                 return
@@ -345,7 +345,7 @@ class Command:
                     f"Poll {active_exist[0][0]} is already active. Only one poll can be active at any time.  \n"
                 )
                 return
-            
+
             cursor.execute(
                 '''UPDATE polls SET active = 1 WHERE poll_id = ?''',
                 [poll_id]
@@ -429,7 +429,7 @@ class Command:
                 INSERT INTO votes (poll_id, team_code, choice, voted_by, voted_at)
                 VALUES (?, ?, ?, ?, datetime("now", "localtime"))
                 ON CONFLICT(poll_id, team_code) DO UPDATE
-                SET choice = excluded.choice, voted_by = excluded.voted_by, voted_at = datetime("now", "localtime") 
+                SET choice = excluded.choice, voted_by = excluded.voted_by, voted_at = datetime("now", "localtime")
                 ''',
                 [poll_id, self.user.team, self.args, self.user.username]
             )

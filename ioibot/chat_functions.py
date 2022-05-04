@@ -70,7 +70,7 @@ async def send_text_to_room(
         logger.exception(f"Unable to send message response to {room_id}")
 
 
-def make_pill(user_id: str, displayname: str = None) -> str:
+def make_pill(user_id: str, homeserver_url: str, displayname: str = None) -> str:
     """Convert a user ID (and optionally a display name) to a formatted user 'pill'
 
     Args:
@@ -87,7 +87,7 @@ def make_pill(user_id: str, displayname: str = None) -> str:
         # Use the user ID as the displayname if not provided
         displayname = user_id
 
-    return f'<a href="https://matrix.to/#/{user_id}">{displayname}</a>'
+    return f'<a href="https://matrix.to/#/@{user_id}:{homeserver_url[8:]}">{displayname}</a>'
 
 
 async def react_to_event(
