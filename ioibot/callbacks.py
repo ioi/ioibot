@@ -145,7 +145,7 @@ class Callbacks:
             return
 
         # Send a message acknowledging the reaction
-        reaction_sender_pill = make_pill(event.sender)
+        reaction_sender_pill = make_pill(event.sender, self.config.homeserver_url)
         reaction_content = (
             event.source.get("content", {}).get("m.relates_to", {}).get("key")
         )
