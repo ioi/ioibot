@@ -115,7 +115,3 @@ async def main():
         finally:
             # Make sure to close the client connection on disconnect
             await client.close()
-
-
-# Run the main function in an asyncio event loop
-asyncio.get_event_loop().run_until_complete(main())

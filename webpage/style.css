@@ -1,0 +1,130 @@
+* {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+body {
+    color: white;
+    background-color: #1f1f24;
+    width: 100vw;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+h1 {
+    font-size: 40px;
+    font-weight: 800;
+}
+
+h3 {
+    font-size: 30px;
+    font-weight: 800;
+}
+
+h4 {
+    font-size: 25px;
+    font-weight: 800;
+}
+
+span {
+    font-size: 20px;
+    font-weight: 500;
+}
+
+.container-fluid {
+    margin: 0;
+    padding: 20px 0px !important;
+}
+
+.row {
+    margin: 0 40px !important;
+}
+
+/* header */
+#header {
+    margin-bottom: 60px !important;
+}
+
+#ioiLogo {
+    height: 60px;
+}
+
+/* guide */
+#guide {
+    position: fixed;
+    bottom: 120px;
+    text-align: center;
+    width: calc(100% - 80px);
+}
+
+/* question */
+#question {
+    margin-bottom: 30px !important;
+}
+
+/* vote result of countries */
+#result {
+    justify-content: center;
+    margin: 0 40px;
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+}
+
+.country {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.countryVote {
+    margin: 1px 0;
+    margin-right: 5px;
+}
+
+.choice {
+    height: 20px;
+    width: 20px;
+    margin-right: 3px !important;
+}
+
+/* vote count */
+#voteCategory {
+    position: absolute;
+    width: calc(100% - 80px);
+    bottom: 20px;
+    margin: 0;
+    justify-content: space-around;
+}
+
+.voteName{
+    height: 40px;
+    margin: 0 20px;
+    padding: 0 !important;
+}
+
+.voteIcon {
+    height: 40px;
+}
+
+.voteDesc {
+    height: 40px;
+    padding: 5px 50px;
+    border-radius: 6px;
+    text-align: center;
+}
+
+#yesDesc {
+    background-color: #3bc325;    
+}
+
+#noDesc {
+    background-color: #ff004a;
+}
+
+#absDesc {
+    color: black;
+    background-color: #e3fb1c;
+}
