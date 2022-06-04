@@ -186,6 +186,27 @@ class Command:
         teams = self.store.teams
         leaders = self.store.leaders
 
+        if teamcode in ['IC', 'SC', 'TC']:
+            rolecode = teamcode
+            roles = set()
+            response = ""
+
+            for index, row in leaders.iterrows():
+                if row['Role'].endswith(rolecode):
+                    roles.add(row['Role'])
+
+            for idx, role in enumerate(roles):
+                if idx > 0:
+                    response += "  \n  \n"
+                response += f"{role} members:"
+                for index, member in leaders.iterrows():
+                    if member['Role'] == role:
+                        response += f"  \n- {make_pill(member['UserID'], self.config.homeserver_url)} ({member['Name']})"
+                        response += f", from {teams.loc[teams['Code'] == member['TeamCode'], 'Name'].item()}"
+
+            await send_text_to_room(self.client, self.room.room_id, response)
+            return
+
         if teamcode not in teams['Code'].unique():
             text = (
                 f"Team {teamcode} not found!"
