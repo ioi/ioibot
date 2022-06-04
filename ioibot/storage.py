@@ -42,7 +42,10 @@ class Storage:
         self.leaders = pd.read_csv(config.leader_url)
         self.contestants = pd.read_csv(config.contestant_url)
         self.contestants.sort_values('ContestantCode')
-        
+        self.testing_acc = pd.read_csv(config.testing_acc_url)
+        self.testing_acc.sort_values('ContestantCode')
+        self.translation_acc = pd.read_csv(config.translation_acc_url)
+
         # Try to check the current migration version
         migration_level = 0
         try:
