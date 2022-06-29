@@ -550,7 +550,7 @@ class Command:
         if not self.args:
             text = (
                 "Usage:  \n\n"
-                "- `accounts contestants`: Show contestant accounts for practice/contest days (for online teams only)  \n"
+                "- `accounts contestants`: Show online contestant accounts for practice/contest days  \n"
                 "- `accounts translation`: Show team account for translation system  \n"
                 "- `accounts test`: Show test accounts for contestant VM  \n"
             )
@@ -562,15 +562,6 @@ class Command:
         team_country = self.user.country
 
         if self.args[0].lower() == 'contestants':
-            is_online = teams.loc[teams['Code'] == team_code, 'Online'].item()
-
-            if is_online == 0:
-                await send_text_to_room(
-                    self.client, self.room.room_id,
-                    f"Team {team_code} ({team_country}) is participating on-site. We do not distribute contestant accounts for on-site teams."
-                )
-                return
-
             contestants = self.store.contestants
             real_team_code = self.user.real_team
             accounts = contestants.loc[contestants['RealTeamCode'] == real_team_code]
@@ -582,7 +573,15 @@ class Command:
                 )
                 return
 
-            text = f"Contestant accounts (`username: password`) for team {team_code} ({team_country}):  \n\n"
+            online_accounts = accounts.loc[accounts['Online'] == 1]
+
+            if online_accounts.empty:
+                text = f"All contestants of team {team_code} ({team_country}) are participating on-site."
+                text += " We do not distribute contestant accounts for on-site contestants."
+                await send_text_to_room(self.client, self.room.room_id, text)
+                return
+
+            text = f"Online contestant accounts (`username: password`) for team {team_code} ({team_country}):  \n\n"
             for index, account in accounts.iterrows():
                 text += f"- `{account['ContestantCode']}` ({account['FirstName']} {account['LastName']}): `{account['Password']}`  \n"
 
