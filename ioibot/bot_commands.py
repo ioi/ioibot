@@ -1,3 +1,6 @@
+import dropbox
+from datetime import datetime
+
 from nio import AsyncClient, MatrixRoom, RoomMessageText
 
 from ioibot.chat_functions import react_to_event, send_text_to_room, make_pill
@@ -117,6 +120,7 @@ class Command:
                 return
 
             await self._vote()
+
         elif self.command.startswith("invite"):
             if self.user.role != 'HTC':
                 await send_text_to_room(
@@ -136,6 +140,16 @@ class Command:
                 return
 
             await self._show_accounts()
+
+        elif self.command.startswith("dropbox"):
+            if self.user.role not in ['Leader', 'Deputy Leader']:
+                await send_text_to_room(
+                    self.client, self.room.room_id,
+                    "Only Leader and Deputy Leader can use this command."
+                )
+                return
+
+            await self._get_dropbox()
 
         else:
             await self._unknown_command()
@@ -630,6 +644,58 @@ class Command:
                 self.client, self.room.room_id,
                 "Command format is invalid. Send `accounts` to see all commands."
             )
+
+    async def _get_dropbox(self):
+        dropbox_link = self.store.dropbox_url
+        team_code = self.user.team
+        real_team_code = self.user.real_team
+        team_country = self.user.country
+
+        # yyyy/mm/dd format
+        if(datetime.now() < datetime(2022, 8, 10)):
+            day = 0
+        elif(datetime.now() < datetime(2022, 8, 12)):
+            day = 1
+        else:
+            day = 2
+
+        url = dropbox_link.loc[dropbox_link['RealTeamCode'] == real_team_code, "Day " + str(day)]
+        if url.empty:
+            await send_text_to_room(
+                self.client, self.room.room_id,
+                f"No Dropbox file request link found for team {team_code} ({team_country}). Plase contact HTC for details."
+            )
+            return 
+        url = url.values[0] 
+
+        text = f"Dropbox upload link for Day {day} for team {team_code} ({team_country}):  \n\n"
+        text += url + "  \n\n"
+
+        dbx = self.store.dbx
+        try:
+            res = dbx.files_list_folder(f"/Uploads/Day {day}/{real_team_code}")
+        except Exception as e:
+            await send_text_to_room(self.client, self.room.room_id, "No upload folder found.")
+
+        if not res.entries:
+            text += "The folder is empty. Please upload the required files through the link provided above."
+            await send_text_to_room(self.client, self.room.room_id, text)
+            return
+
+        text += "List of successfully uploaded files:  \n"
+
+        def list_directory(dbx, path, prefix):
+            nonlocal text
+            res = dbx.files_list_folder(path)
+            for entry in res.entries:
+                if (isinstance(entry, dropbox.files.FolderMetadata)):
+                    list_directory(dbx, path + "/" + entry.name, prefix + entry.name + "/")
+                else:
+                    text += f"- `{prefix}{entry.name}`  \n"
+
+        list_directory(dbx, f"/Uploads/Day {day}/{real_team_code}", "")
+
+        await send_text_to_room(self.client, self.room.room_id, text)
 
     async def _unknown_command(self):
         await send_text_to_room(

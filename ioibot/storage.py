@@ -1,3 +1,4 @@
+import dropbox
 import logging
 import pandas as pd
 from typing import Any, Dict
@@ -45,6 +46,20 @@ class Storage:
         self.testing_acc = pd.read_csv(config.testing_acc_url)
         self.testing_acc.sort_values('ContestantCode')
         self.translation_acc = pd.read_csv(config.translation_acc_url)
+
+        # dropbox configuration
+        access_token = config.db_access_token
+        refresh_token = config.db_refresh_token
+        app_key = config.db_app_key
+        app_secret = config.db_app_secret
+
+        self.dropbox_url = pd.read_csv(config.dropbox_url)
+        self.dbx = dropbox.Dropbox(
+                        access_token, 
+                        oauth2_refresh_token = refresh_token,
+                        app_key = app_key, 
+                        app_secret = app_secret
+                   )
 
         # Try to check the current migration version
         migration_level = 0

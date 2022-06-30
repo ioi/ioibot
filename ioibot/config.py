@@ -111,6 +111,13 @@ class Config:
         self.testing_acc_url = self._get_cfg(["datasource", "testing_acc_url"])
         self.translation_acc_url = self._get_cfg(["datasource", "translation_acc_url"])
         
+        # dropbox configuration
+        self.dropbox_url = self._get_cfg(["datasource", "dropbox_url"])
+        self.db_access_token = self._get_cfg(["dropbox_credential", "access_token"])
+        self.db_refresh_token = self._get_cfg(["dropbox_credential", "refresh_token"])
+        self.db_app_key = self._get_cfg(["dropbox_credential", "app_key"])
+        self.db_app_secret = self._get_cfg(["dropbox_credential", "app_secret"])
+
     def _get_cfg(
         self,
         path: List[str],
