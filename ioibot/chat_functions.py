@@ -89,7 +89,6 @@ def make_pill(user_id: str, homeserver_url: str, displayname: str = None) -> str
 
     return f'<a href="https://matrix.to/#/@{user_id}:{homeserver_url[8:]}">{displayname}</a>'
 
-
 async def react_to_event(
     client: AsyncClient,
     room_id: str,

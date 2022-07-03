@@ -244,15 +244,17 @@ class Command:
         curteam = leaders.loc[leaders['TeamCode'] == teamcode]
 
         roles = []
-        for role in curteam["Role"]:
-            if role not in roles and role in ['Team Leader', 'Deputy Leader', 'Guest', 'Remote Adjunct (not on site)', 'Invited Observer/Guest']:
+        for index, member in curteam.iterrows():
+            role = member['Role']
+            userID = member['UserID']
+            if role not in roles and role in ['Team Leader', 'Deputy Leader', 'Guest', 'Remote Adjunct (not on site)', 'Invited Observer/Guest'] and exists(userID):
                 roles.append(role)
 
         for role in roles:
-          response += f"  \n  \n{role}:"
-          for index, member in curteam.iterrows():
-            if member['Role'] == role:
-              response += f"  \n- {make_pill(member['UserID'], self.config.homeserver_url)} ({member['Name']})"
+            response += f"  \n  \n{role}:"
+            for index, member in curteam.iterrows():
+                if member['Role'] == role and exists(member['UserID']):
+                    response += f"  \n- {make_pill(member['UserID'], self.config.homeserver_url)} ({member['Name']})"
 
         response += "  \n  \nContestants:"
         for index, row in self.store.contestants.iterrows():
@@ -705,3 +707,7 @@ class Command:
             self.room.room_id,
             f"Unknown command '{self.command}'. Try the 'help' command for more information.",
         )
+
+
+def exists(n):
+    return n == n
