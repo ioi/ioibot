@@ -105,10 +105,10 @@ class Command:
             await self._manage_poll()
 
         elif self.command.startswith("vote"):
-            if self.user.role not in ['Leader', 'Deputy Leader']:
+            if self.user.role not in ['Team Leader', 'Deputy Leader']:
                 await send_text_to_room(
                     self.client, self.room.room_id,
-                    "Only Leader and Deputy Leader can use this command."
+                    "Only Team Leader and Deputy Leader can use this command."
                 )
                 return
 
@@ -132,20 +132,20 @@ class Command:
             await self.invite()
 
         elif self.command.startswith("accounts"):
-            if self.user.role not in ['Leader', 'Deputy Leader']:
+            if self.user.role not in ['Team Leader', 'Deputy Leader']:
                 await send_text_to_room(
                     self.client, self.room.room_id,
-                    "Only Leader and Deputy Leader can use this command."
+                    "Only Team Leader and Deputy Leader can use this command."
                 )
                 return
 
             await self._show_accounts()
 
         elif self.command.startswith("dropbox"):
-            if self.user.role not in ['Leader', 'Deputy Leader']:
+            if self.user.role not in ['Team Leader', 'Deputy Leader']:
                 await send_text_to_room(
                     self.client, self.room.room_id,
-                    "Only Leader and Deputy Leader can use this command."
+                    "Only Team Leader and Deputy Leader can use this command."
                 )
                 return
 
