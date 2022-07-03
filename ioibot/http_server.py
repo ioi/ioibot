@@ -50,6 +50,8 @@ async def create_app():
 			# show country name instead of country code for ease of use
 			votes = {}
 			for key, team in teams.iterrows():
+				if team['Voting'] == 0:
+					continue
 				if team['Code'] in vote_result:
 					votes[team['Name']] = vote_result[team['Code']]
 				else:
