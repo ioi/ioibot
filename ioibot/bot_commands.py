@@ -229,7 +229,9 @@ class Command:
             await send_text_to_room(self.client, self.room.room_id, response)
             return
 
-        if teamcode not in teams['Code'].unique():
+        team = teams.loc[(teams['Code'] == teamcode) & (teams['Visible'] == 1)]
+
+        if team.empty:
             text = (
                 f"Team {teamcode} not found!"
             )
@@ -237,7 +239,7 @@ class Command:
             return
 
         response = f"""Team members from {teamcode}
-        ({teams.loc[teams['Code'] == teamcode, 'Name'].item()}):"""
+        ({team.iloc[0]['Name']}):"""
 
         curteam = leaders.loc[leaders['TeamCode'] == teamcode]
 
