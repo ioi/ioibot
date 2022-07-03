@@ -244,9 +244,9 @@ class Command:
         curteam = leaders.loc[leaders['TeamCode'] == teamcode]
 
         roles = []
-        for row in curteam["Role"]:
-            if row not in roles:
-                roles.append(row)
+        for role in curteam["Role"]:
+            if role not in roles and role in ['Team Leader', 'Deputy Leader', 'Guest', 'Remote Adjunct (not on site)', 'Invited Observer/Guest']:
+                roles.append(role)
 
         for role in roles:
           response += f"  \n  \n{role}:"
