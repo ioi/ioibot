@@ -197,9 +197,10 @@ class Command:
         if not self.args:
             text = (
                 "Usage:"
-                "  \n`info <3-letter-country-code>`: shows team members"
+                "  \n`info <3-letter-country-code>|ic|sc|tc`: shows team/IC/SC/TC members"
                 "  \n  \nExamples:"
                 "  \n- `info IDN`"
+                "  \n- `info ic`"
             )
             await send_text_to_room(self.client, self.room.room_id, text)
             return
