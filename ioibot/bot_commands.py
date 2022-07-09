@@ -223,7 +223,7 @@ class Command:
                 response += f"{role} members:"
                 for index, member in leaders.iterrows():
                     if member['Role'] == role:
-                        response += f"  \n- {make_pill(member['UserID'], self.config.homeserver_url)} ({member['Name']})"
+                        response += f"  \n- {make_pill(member['UserID'], self.config.homeserver_url)} | {member['Name']}"
                         response += f", from {teams.loc[teams['Code'] == member['TeamCode'], 'Name'].item()}"
 
             await send_text_to_room(self.client, self.room.room_id, response)
@@ -254,12 +254,12 @@ class Command:
             response += f"  \n  \n{role}:"
             for index, member in curteam.iterrows():
                 if member['Role'] == role and exists(member['UserID']):
-                    response += f"  \n- {make_pill(member['UserID'], self.config.homeserver_url)} ({member['Name']})"
+                    response += f"  \n- {make_pill(member['UserID'], self.config.homeserver_url)} | {member['Name']}"
 
         response += "  \n  \nContestants:"
         for index, row in self.store.contestants.iterrows():
             if row['ContestantCode'].startswith(teamcode):
-                response += f"  \n- `{row['ContestantCode']}` ({row['FirstName']} {row['LastName']})"
+                response += f"  \n- `{row['ContestantCode']}` | {row['FirstName']} {row['LastName']}"
 
         await send_text_to_room(self.client, self.room.room_id, response)
 
@@ -601,7 +601,7 @@ class Command:
 
             text = f"Online contestant accounts (`username: password`) for team {team_code} ({team_country}):  \n\n"
             for index, account in accounts.iterrows():
-                text += f"- `{account['ContestantCode']}` ({account['FirstName']} {account['LastName']}): `{account['Password']}`  \n"
+                text += f"- `{account['ContestantCode']}` | {account['FirstName']} {account['LastName']}: `{account['Password']}`  \n"
 
             text += "\n\n These accounts are to be used for practice and contest days. Please ensure that each contestant receives the correct account."
 
