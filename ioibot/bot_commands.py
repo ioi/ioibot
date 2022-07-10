@@ -33,6 +33,12 @@ class User():
                 self.role = user.iat[0, 3]
                 self.country = country.iat[0, 0]
 
+    def is_leader(self):
+        return self.role in ['Team Leader', 'Deputy Leader']
+
+    def is_tc(self):
+        return 'TC' in self.role
+
     def _get_username(self, name):
         homeserver = self.config.homeserver_url[8:]
         return "@" + name + ":" + homeserver
@@ -95,7 +101,7 @@ class Command:
             await self._show_info()
 
         elif self.command.startswith("poll"):
-            if user.role not in ['HTC']:
+            if not self.user.is_tc():
                 await send_text_to_room(
                     self.client, self.room.room_id,
                     "Only HTC can use this command."
@@ -105,7 +111,7 @@ class Command:
             await self._manage_poll()
 
         elif self.command.startswith("vote"):
-            if self.user.role not in ['Team Leader', 'Deputy Leader']:
+            if not self.user.is_leader():
                 await send_text_to_room(
                     self.client, self.room.room_id,
                     "Only Team Leader and Deputy Leader can use this command."
@@ -132,7 +138,7 @@ class Command:
             await self.invite()
 
         elif self.command.startswith("accounts"):
-            if self.user.role not in ['Team Leader', 'Deputy Leader']:
+            if not self.user.is_leader():
                 await send_text_to_room(
                     self.client, self.room.room_id,
                     "Only Team Leader and Deputy Leader can use this command."
@@ -142,7 +148,7 @@ class Command:
             await self._show_accounts()
 
         elif self.command.startswith("dropbox"):
-            if self.user.role not in ['Team Leader', 'Deputy Leader']:
+            if not self.user.is_leader():
                 await send_text_to_room(
                     self.client, self.room.room_id,
                     "Only Team Leader and Deputy Leader can use this command."
