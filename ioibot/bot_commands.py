@@ -576,18 +576,17 @@ class Command:
         if not self.args:
             text = (
                 "Usage:  \n\n"
-                "- `accounts contestants`: Show online contestant accounts for practice/contest days  \n"
+                "- `accounts early-practice`: Show accounts for the early practice contest  \n"
+                "- `accounts contest`: Show online contestant accounts for the actual practice/contest days  \n"
                 "- `accounts translation`: Show team account for translation system  \n"
-                "- `accounts test`: Show test accounts for contestant VM  \n"
             )
             await send_text_to_room(self.client, self.room.room_id, text)
             return
 
-        teams = self.store.teams
         team_code = self.user.team
         team_country = self.user.country
 
-        if self.args[0].lower() == 'contestants':
+        if self.args[0].lower() == 'contest':
             contestants = self.store.contestants
             real_team_code = self.user.real_team
             accounts = contestants.loc[contestants['RealTeamCode'] == real_team_code]
@@ -607,11 +606,12 @@ class Command:
                 await send_text_to_room(self.client, self.room.room_id, text)
                 return
 
-            text = f"Online contestant accounts (`username: password`) for team {team_code} ({team_country}):  \n\n"
+            text = f"Online contestant accounts (`username`: `password`) for team {team_code} ({team_country}):  \n\n"
             for index, account in accounts.iterrows():
-                text += f"- `{account['ContestantCode']}` | {account['FirstName']} {account['LastName']}: `{account['Password']}`  \n"
+                text += f"- {account['FirstName']} {account['LastName']}  \n"
+                text += f"  `{account['ContestantCode']}`: `{account['Password']}`  \n"
 
-            text += "\n\n These accounts are to be used for practice and contest days. Please ensure that each contestant receives the correct account."
+            text += "\n\n These accounts are to be used for actual practice and contest days."
 
             await send_text_to_room(self.client, self.room.room_id, text)
 
@@ -627,12 +627,12 @@ class Command:
                 )
                 return
 
-            text  = f"Translation account (`username: password`) for team {team_code} ({team_country}): \n\n"
+            text  = f"Translation account (`username`: `password`) for team {team_code} ({team_country}): \n\n"
             text += f"`{team_code}`: `{account.iat[0, 1]}` \n\n"
 
             await send_text_to_room(self.client, self.room.room_id, text)
 
-        elif self.args[0].lower() == 'test':
+        elif self.args[0].lower() == 'early-practice':
             testing = self.store.testing_acc
             real_team_code = self.user.real_team
             accounts = testing.loc[testing['RealTeamCode'] == real_team_code]
@@ -640,14 +640,15 @@ class Command:
             if accounts.empty:
                 await send_text_to_room(
                     self.client, self.room.room_id,
-                    f"No testing accounts available for team {team_code} ({team_country}). Please contact HTC for details."
+                    f"No early practice contest accounts available for team {team_code} ({team_country}). Please contact HTC for details."
                 )
                 return
 
-            text = f"Test accounts (`username: password`) for team {team_code} ({team_country}): \n\n"
+            text = f"Early practice contest accounts (`username`: `password`) for team {team_code} ({team_country}): \n\n"
             for index, account in accounts.iterrows():
-                text += f"- `{account['ContestantCode']}`: `{account['Password']}`  \n"
-            text += "\n\n These accounts are for testing only, and NOT tied to any particular contestants."
+                text += f"- {account['FirstName']} {account['LastName']}  \n"
+                text += f"  `{account['ContestantCode']}`: `{account['Password']}`  \n"
+            text += "\n\n These accounts are NOT used for actual contest days."
 
             await send_text_to_room(self.client, self.room.room_id, text)
 
