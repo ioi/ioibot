@@ -225,7 +225,10 @@ class Command:
                     response += "  \n  \n"
                 response += f"{role}:  \n"
                 for index, member in leaders.iterrows():
-                    if member['Role'] == role:
+                    if member['Role'] == role and member['Chair'] == 1:
+                        response += f"  \n- {make_pill(member['UserID'], self.config.homeserver_url)} (Chair) | {member['Name']}"
+                for index, member in leaders.iterrows():
+                    if member['Role'] == role and member['Chair'] != 1:
                         response += f"  \n- {make_pill(member['UserID'], self.config.homeserver_url)} | {member['Name']}"
 
             await send_text_to_room(self.client, self.room.room_id, response)
