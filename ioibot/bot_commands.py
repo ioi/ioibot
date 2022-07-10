@@ -183,11 +183,11 @@ class Command:
         """Show the help text"""
 
         text = ""
-        text += "Hello, I am IOI 2022 bot. I understand several commands:"
-        text += "  \n- `info`: shows various team information"
-        text += "  \n- `accounts`: shows various accounts for your team"
-        text += "  \n- `dropbox`: shows Dropbox upload links for your team"
-        text += "  \n- `vote`: casts vote for your team"
+        text += "Hello, I am IOI 2022 bot. I understand several commands:  \n\n"
+        text += "- `info`: shows various team information\n"
+        text += "- `accounts`: shows various accounts for your team\n"
+        text += "- `dropbox`: shows Dropbox upload links for your team\n"
+        text += "- `vote`: casts vote for your team\n"
 
         await send_text_to_room(self.client, self.room.room_id, text)
 
@@ -195,11 +195,11 @@ class Command:
         """Show team info"""
         if not self.args:
             text = (
-                "Usage:"
-                "  \n`info <3-letter-country-code>|ic|sc|tc`: shows team/IC/SC/TC members"
-                "  \n  \nExamples:"
-                "  \n- `info IDN`"
-                "  \n- `info ic`"
+                "Usage:  \n\n"
+                "`info <3-letter-country-code>|ic|sc|tc`: shows team/IC/SC/TC members  \n\n"
+                "Examples:  \n\n"
+                "- `info IDN`  \n"
+                "- `info ic`  \n"
             )
             await send_text_to_room(self.client, self.room.room_id, text)
             return
@@ -223,7 +223,7 @@ class Command:
             for idx, role in enumerate(roles):
                 if idx > 0:
                     response += "  \n  \n"
-                response += f"{role}:"
+                response += f"{role}:  \n"
                 for index, member in leaders.iterrows():
                     if member['Role'] == role:
                         response += f"  \n- {make_pill(member['UserID'], self.config.homeserver_url)} | {member['Name']}"
@@ -253,12 +253,12 @@ class Command:
                 roles.append(role)
 
         for role in roles:
-            response += f"  \n  \n{role}:"
+            response += f"  \n  \n{role}: \n"
             for index, member in curteam.iterrows():
                 if member['Role'] == role and exists(member['UserID']):
                     response += f"  \n- {make_pill(member['UserID'], self.config.homeserver_url)} | {member['Name']}"
 
-        response += "  \n  \nContestants:"
+        response += "  \n  \nContestants:  \n"
         for index, row in self.store.contestants.iterrows():
             if row['ContestantCode'].startswith(teamcode):
                 response += f"  \n- `{row['ContestantCode']}` | {row['FirstName']} {row['LastName']}"
