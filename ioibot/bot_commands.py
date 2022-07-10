@@ -34,7 +34,7 @@ class User():
                 self.country = country.iat[0, 0]
 
     def is_leader(self):
-        return self.role in ['Team Leader', 'Deputy Leader']
+        return self.is_tc() or self.role in ['Team Leader', 'Deputy Leader']
 
     def is_tc(self):
         return 'TC' in self.role
