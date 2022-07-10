@@ -261,7 +261,10 @@ class Command:
         response += "  \n  \nContestants:  \n"
         for index, row in self.store.contestants.iterrows():
             if row['ContestantCode'].startswith(teamcode):
-                response += f"  \n- `{row['ContestantCode']}` | {row['FirstName']} {row['LastName']}"
+                response += f"  \n- `{row['ContestantCode']}`"
+                if row['Online'] == 1:
+                    response += " (online)"
+                response += f" | {row['FirstName']} {row['LastName']}"
 
         await send_text_to_room(self.client, self.room.room_id, response)
 
