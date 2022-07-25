@@ -157,6 +157,16 @@ class Command:
 
             await self._get_dropbox()
 
+        elif self.command.startswith("token"):
+            if not self.user.is_leader():
+                await send_text_to_room(
+                    self.client, self.room.room_id,
+                    "Only Team Leader and Deputy Leader can use this command."
+                )
+                return
+
+            await self._get_token()
+
         else:
             await self._unknown_command()
 
@@ -709,6 +719,21 @@ class Command:
         list_directory(dbx, f"/Uploads/Day {day}/{real_team_code}", "")
 
         await send_text_to_room(self.client, self.room.room_id, text)
+
+    async def _get_token(self):
+        tokens = self.store.tokens
+        token = tokens.loc[tokens['TeamCode'] == self.user.team]
+
+        if token.empty:
+            await send_text_to_room(
+                self.client, self.room.room_id,
+                "There is no token for your team."
+            )
+        else:
+            await send_text_to_room(
+                self.client, self.room.room_id,
+                token.iloc[0, 1]
+            )
 
     async def _unknown_command(self):
         await send_text_to_room(

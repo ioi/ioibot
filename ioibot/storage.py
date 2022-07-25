@@ -46,7 +46,8 @@ class Storage:
         self.testing_acc = pd.read_csv(config.testing_acc_url)
         self.testing_acc.sort_values('ContestantCode')
         self.translation_acc = pd.read_csv(config.translation_acc_url)
-
+        self.tokens = pd.read_csv(config.token_url)
+        
         # dropbox configuration
         access_token = config.db_access_token
         refresh_token = config.db_refresh_token

@@ -56,6 +56,7 @@ datasource:
   testing_acc_url: "https://docs.google.com/spreadsheets/d/1yzW-gbkdU_JOBIRGA6eo0utytEPha8oChDiZ06Jz-dI/export?format=csv&gid=442814869"
   translation_acc_url: "https://docs.google.com/spreadsheets/d/1yzW-gbkdU_JOBIRGA6eo0utytEPha8oChDiZ06Jz-dI/export?format=csv&gid=709144763"
   dropbox_url: "https://docs.google.com/spreadsheets/d/1yzW-gbkdU_JOBIRGA6eo0utytEPha8oChDiZ06Jz-dI/export?format=csv&gid=1654937967"
+  token_url: "https://docs.google.com/spreadsheets/d/1yzW-gbkdU_JOBIRGA6eo0utytEPha8oChDiZ06Jz-dI/export?format=csv&gid=480247230"
 
 dropbox_credential:
   access_token: "sl.BKdHUR9ie8McUIYPrN3Mde0E8xaO4_39_JUbYvmQob5VgYArXqmOVjRG9B7BhgucEvhBzRJBJlkqQxsFtZfcN9d2rTqHxkg4C573Z9laJ6_wLZS9ouNj9OnprcoWCSof39dMwL90V_Y"
