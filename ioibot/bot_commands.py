@@ -732,7 +732,7 @@ class Command:
         else:
             await send_text_to_room(
                 self.client, self.room.room_id,
-                token.iloc[0, 1]
+                f"Token for team {self.user.team}: `{token.iloc[0, 1]}`"
             )
 
     async def _unknown_command(self):
