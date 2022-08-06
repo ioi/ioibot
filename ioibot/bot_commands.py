@@ -618,7 +618,7 @@ class Command:
                 return
 
             text = f"Online contestant accounts (`username`: `password`) for team {team_code} ({team_country}):  \n\n"
-            for index, account in accounts.iterrows():
+            for index, account in online_accounts.iterrows():
                 text += f"- {account['FirstName']} {account['LastName']}  \n"
                 text += f"  `{account['ContestantCode']}`: `{account['Password']}`  \n"
 
