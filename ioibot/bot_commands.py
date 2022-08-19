@@ -1,3 +1,4 @@
+import asyncio
 import dropbox
 from datetime import datetime
 
@@ -547,7 +548,7 @@ class Command:
                 "  \n`invite <role> <room id>`: Invite all accounts with role to room"
                 "  \n  \nExamples:"
                 "  \n- `invite translators !egvUrNsxzCYFUtUmEJ:matrix.ioi2022.id`"
-                "  \n- `invite online !egvUrNsxzCYFUtUmEJ:matrix.ioi2022.id all`"
+                "  \n- `invite online !egvUrNsxzCYFUtUmEJ:matrix.ioi2022.id`"
             )
             await send_text_to_room(self.client, self.room.room_id, text)
             return
@@ -565,6 +566,8 @@ class Command:
                         self.args[1],
                         f"@{acc['UserID']}:{self.config.homeserver_url[8:]}"
                     )
+                    await asyncio.sleep(0.25)
+                    
         elif self.args[0].lower() == 'online':
             online_countries = set()
             for index, acc in self.store.contestants.iterrows():
@@ -580,6 +583,7 @@ class Command:
                             self.args[1],
                             f"@{acc['UserID']}:{self.config.homeserver_url[8:]}"
                         )
+                        await asyncio.sleep(0.25)
 
         await send_text_to_room(self.client, self.room.room_id, "Successfully invited!")
 
@@ -700,6 +704,7 @@ class Command:
             res = dbx.files_list_folder(f"/Uploads/Day {day}/{real_team_code}")
         except Exception as e:
             await send_text_to_room(self.client, self.room.room_id, "No upload folder found.")
+            return 
 
         if not res.entries:
             text += "The folder is empty. Please upload the required files through the link provided above."
