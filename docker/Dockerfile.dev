@@ -53,14 +53,15 @@ RUN apk add --no-cache \
 
 # Install python runtime modules. We do this before copying the source code
 # such that these dependencies can be cached
-RUN mkdir -p /src/my_project_name
-COPY my_project_name/__init__.py /src/my_project_name/
-COPY README.md my-project-name /src/
+RUN mkdir -p /src/ioibot
+COPY ioibot/__init__.py /src/ioibot/
+COPY README.md /src/
 COPY setup.py /src/setup.py
+COPY ioi-bot /src/ioi-bot
 RUN pip install -e "/src/.[postgres]"
 
 # Now copy the source code
-COPY my_project_name/*.py /src/my_project_name/
+COPY ioibot/*.py /src/ioibot/
 COPY *.py /src/
 
 # Specify a volume that holds the config file, SQLite3 database,
@@ -68,4 +69,4 @@ COPY *.py /src/
 VOLUME ["/data"]
 
 # Start the app
-ENTRYPOINT ["my-project-name", "/data/config.yaml"]
+ENTRYPOINT ["ioi-bot", "/data/config.yaml"]

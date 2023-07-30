@@ -1,0 +1,65 @@
+# Welcome to the sample config file
+# Below you will find various config sections and options
+# Default values are shown
+
+# The string to prefix messages with to talk to the bot in group chats
+command_prefix: "!c"
+
+# Options for connecting to the bot's Matrix account
+matrix:
+  # The Matrix User ID of the bot account
+  user_id: ""
+  # Matrix account password (optional if access token used)
+  user_password: ""
+  # Matrix account access token (optional if password used)
+  #user_token: ""
+  # The URL of the homeserver to connect to
+  homeserver_url: https://matrix.ioinformatics.org
+  # The device ID that is **non pre-existing** device
+  # If this device ID already exists, messages will be dropped silently in encrypted rooms
+  device_id: IOIBOT2023
+  # What to name the logged in device
+  device_name: ioibot
+
+storage:
+  # The database connection string
+  # For SQLite3, this would look like:
+  #     database: "sqlite://bot.db"
+  # For Postgres, this would look like:
+  #     database: "postgres://username:password@localhost/dbname?sslmode=disable"
+  database: "sqlite:///data/bot.db"
+  # The path to a directory for internal bot storage
+  # containing encryption keys, sync tokens, etc.
+  store_path: "/data/store"
+
+# Logging setup
+logging:
+  # Logging level
+  # Allowed levels are 'INFO', 'WARNING', 'ERROR', 'DEBUG' where DEBUG is most verbose
+  level: INFO
+  # Configure logging to a file
+  file_logging:
+    # Whether logging to a file is enabled
+    enabled: false
+    # The path to the file to log to. May be relative or absolute
+    filepath: bot.log
+  # Configure logging to the console output
+  console_logging:
+    # Whether logging to the console is enabled
+    enabled: true
+
+datasource:
+  # Example of datasource
+  team_url: "https://docs.google.com/spreadsheets/d/1yzW-gbkdU_JOBIRGA6eo0utytEPha8oChDiZ06Jz-dI/export?format=csv&gid=0"
+  leader_url: "https://docs.google.com/spreadsheets/d/1yzW-gbkdU_JOBIRGA6eo0utytEPha8oChDiZ06Jz-dI/export?format=csv&gid=718151077"
+  contestant_url: "https://docs.google.com/spreadsheets/d/1yzW-gbkdU_JOBIRGA6eo0utytEPha8oChDiZ06Jz-dI/export?format=csv&gid=1740907177"
+  testing_acc_url: "https://docs.google.com/spreadsheets/d/1yzW-gbkdU_JOBIRGA6eo0utytEPha8oChDiZ06Jz-dI/export?format=csv&gid=442814869"
+  translation_acc_url: "https://docs.google.com/spreadsheets/d/1yzW-gbkdU_JOBIRGA6eo0utytEPha8oChDiZ06Jz-dI/export?format=csv&gid=709144763"
+  dropbox_url: "https://docs.google.com/spreadsheets/d/1yzW-gbkdU_JOBIRGA6eo0utytEPha8oChDiZ06Jz-dI/export?format=csv&gid=1654937967"
+  token_url: "https://docs.google.com/spreadsheets/d/1yzW-gbkdU_JOBIRGA6eo0utytEPha8oChDiZ06Jz-dI/export?format=csv&gid=480247230"
+
+dropbox_credential:
+  access_token: "sl.BKdHUR9ie8McUIYPrN3Mde0E8xaO4_39_JUbYvmQob5VgYArXqmOVjRG9B7BhgucEvhBzRJBJlkqQxsFtZfcN9d2rTqHxkg4C573Z9laJ6_wLZS9ouNj9OnprcoWCSof39dMwL90V_Y"
+  refresh_token: "nkJcgIRIb70AAAAAAAAAAbEFnsVZDSF6kP6CpDipdsMecfwnB_IGoFS3jL7-afiI"
+  app_key: "62x880o39xba2pd"
+  app_secret: "ekoz0sh72h5fa7o"

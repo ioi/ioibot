@@ -21,6 +21,7 @@ dist/
 
 # Config file
 config.yaml
+!data/config.yaml
 
 # Log files
 *.log
