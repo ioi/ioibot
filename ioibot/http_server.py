@@ -9,7 +9,7 @@ async def create_app():
 	routes = web.RouteTableDef()
 	conn = sqlite3.connect('ioibot.db')
 	cursor = conn.cursor()
-	with open("data/config.yaml", "r") as file_stream:
+	with open("/data/config.yaml", "r") as file_stream:
 		config = yaml.safe_load(file_stream)
 	teams = pd.read_csv(config['datasource']['team_url'])
 
@@ -108,5 +108,5 @@ async def main():
 	app = await create_app()
 	runner = web.AppRunner(app)
 	await runner.setup()
-	site = web.TCPSite(runner, '127.0.0.1', 9000)
+	site = web.TCPSite(runner, '0.0.0.0', 9000)
 	await site.start();
