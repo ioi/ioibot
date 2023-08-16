@@ -21,7 +21,10 @@ dist/
 
 # Config file
 config.yaml
-!data/config.yaml
+# !data/config.yaml
 
 # Log files
 *.log
+
+# Mounted Docker volume for configuration
+data/
