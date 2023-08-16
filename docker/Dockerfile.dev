@@ -40,6 +40,7 @@ RUN apk add --no-cache \
     yaml-dev \
     python3-dev
 
+RUN pip install pandas
 # Build libolm
 COPY docker/build_and_install_libolm.sh /scripts/
 RUN /scripts/build_and_install_libolm.sh ${LIBOLM_VERSION}
@@ -53,16 +54,19 @@ RUN apk add --no-cache \
 
 # Install python runtime modules. We do this before copying the source code
 # such that these dependencies can be cached
-RUN mkdir -p /src/ioibot
-COPY ioibot/__init__.py /src/ioibot/
-COPY README.md /src/
-COPY setup.py /src/setup.py
-COPY ioi-bot /src/ioi-bot
-RUN pip install -e "/src/.[postgres]"
+WORKDIR /src
+COPY README.md ./
+COPY setup.py ./setup.py
+COPY ioi-bot ./ioi-bot
+RUN mkdir -p ioibot
+COPY ioibot/__init__.py ioibot/__init__.py
+RUN pip install -e ".[postgres]"
+COPY ioibot ./ioibot
+
+COPY webpage ./webpage
 
 # Now copy the source code
-COPY ioibot/*.py /src/ioibot/
-COPY *.py /src/
+COPY *.py ./
 
 # Specify a volume that holds the config file, SQLite3 database,
 # and the matrix-nio store
