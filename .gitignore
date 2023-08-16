@@ -10,21 +10,15 @@ env3/
 *.db
 store/
 
-# Config file
-config.yaml
-
 # Python
 __pycache__/
 *.egg-info/
 build/
 dist/
 
-# Config file
-config.yaml
-# !data/config.yaml
-
 # Log files
 *.log
 
 # Mounted Docker volume for configuration
-data/
+data/**
+!data/config.default.yaml
