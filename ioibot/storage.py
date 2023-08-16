@@ -13,6 +13,7 @@ from typing import Any, Dict
 latest_migration_version = 0
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 from ioibot.config import Config
 
@@ -33,12 +34,12 @@ class Storage:
             database_config["type"], database_config["connection_string"]
         )
         self.vconn = self._get_database_connection(
-            database_config["type"], "ioibot.db"
+            database_config["type"], "/data/ioibot.db"
         )
 
         self.cursor = self.conn.cursor()
         self.db_type = database_config["type"]
-        self.config = Config
+        self.config = config
         self.teams = pd.read_csv(config.team_url)
         self.leaders = pd.read_csv(config.leader_url)
         self.contestants = pd.read_csv(config.contestant_url)
@@ -46,6 +47,7 @@ class Storage:
         self.testing_acc = pd.read_csv(config.testing_acc_url)
         self.testing_acc.sort_values('ContestantCode')
         self.translation_acc = pd.read_csv(config.translation_acc_url)
+        self.objection_rooms = pd.read_csv(config.objection_room_url)
         self.tokens = pd.read_csv(config.token_url)
         
         # dropbox configuration

@@ -1,7 +1,7 @@
 import sqlite3
 
 def create_database():
-	conn = sqlite3.connect('ioibot.db')
+	conn = sqlite3.connect('/data/ioibot.db')
 	c = conn.cursor()
 
 	c.execute(
