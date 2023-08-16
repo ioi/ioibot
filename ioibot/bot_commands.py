@@ -3,10 +3,15 @@ import dropbox
 from datetime import datetime
 
 from nio import AsyncClient, MatrixRoom, RoomMessageText
+from nio.responses import RoomGetEventError
 
-from ioibot.chat_functions import react_to_event, send_text_to_room, make_pill
+from ioibot.chat_functions import react_to_event, send_text_to_room, send_text_to_thread, make_pill
 from ioibot.config import Config
 from ioibot.storage import Storage
+
+import logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 class User():
     def __init__(self, store: Storage, config: Config, username: str):
@@ -33,12 +38,16 @@ class User():
                 self.name = user.iat[0, 2]
                 self.role = user.iat[0, 3]
                 self.country = country.iat[0, 0]
+                self.user_id = user.iat[0, 4]
 
     def is_leader(self):
         return self.is_tc() or self.role in ['Team Leader', 'Deputy Leader']
 
     def is_tc(self):
         return 'TC' in self.role
+
+    def is_sc(self):
+        return 'SC' in self.role
 
     def _get_username(self, name):
         homeserver = self.config.homeserver_url[8:]
@@ -119,12 +128,12 @@ class Command:
                 )
                 return
 
-            if self.user.team == "IOI":
-                await send_text_to_room(
-                    self.client, self.room.room_id,
-                    "Sorry, you are not allowed to vote."
-                )
-                return
+            # if self.user.team == "IOI":
+            #     await send_text_to_room(
+            #         self.client, self.room.room_id,
+            #         "Sorry, you are not allowed to vote."
+            #     )
+            #     return
 
             await self._vote()
 
@@ -147,6 +156,16 @@ class Command:
                 return
 
             await self._show_accounts()
+
+        elif self.command.startswith("objection"):
+            if not self.user.is_leader() and not self.user.is_sc():
+                await send_text_to_room(
+                    self.client, self.room.room_id,
+                    "Only Team Leaders, Deputy Leaders and SC members can use this command."
+                )
+                return
+
+            await self._objection()
 
         elif self.command.startswith("dropbox"):
             if not self.user.is_leader():
@@ -672,6 +691,72 @@ class Command:
                 self.client, self.room.room_id,
                 "Command format is invalid. Send `accounts` to see all commands."
             )
+
+    async def _objection(self):
+
+        if not self.args:
+            text = (
+                "Usage:  \n\n"
+                "- `objection <Optional: Major/Minor> <content>`: Send objection to the SC.\n"
+            )
+            await send_text_to_room(self.client, self.room.room_id, text)
+            return
+
+        if len(self.args) == 0:
+            await send_text_to_room(
+                self.client, self.room.room_id,
+                "Command format is invalid. Send `objection` to see all commands."
+            )
+            return
+
+        if self.args[0].lower() in ['major', 'minor']:
+            severity = self.args[0].lower()
+            content = ' '.join(self.args[1:])
+        else:
+            severity = 'minor'
+            content = ' '.join(self.args[0:])
+
+
+        objection_rooms = self.store.objection_rooms
+        sc_room_id = objection_rooms.loc[objection_rooms['Objection Room ID'] == self.room.room_id, 'SC Room ID']
+        if sc_room_id.empty:
+            await send_text_to_room(
+                self.client, self.room.room_id,
+                "This room is not an objection room. Please contact HTC for details."
+            )
+            return
+        sc_room_id = sc_room_id.values[0]
+
+        original_post = f"https://matrix.to/#/{self.room.room_id}/{self.event.event_id}?via={self.config.homeserver_url}"
+        
+        sc_message = (
+            f"{'#### Major' if severity == 'major' else '##### *Minor*' }  \n\n"
+            f"{content}  \n\n"
+            f"Objection from {make_pill(self.user.user_id, self.config.homeserver_url)}  \n"
+            f"Original: {original_post}"
+
+        )
+        sc_message_response = await send_text_to_room(self.client, sc_room_id, sc_message)
+
+        objection_room_text = (
+            "Your objection has been sent to the SC.  \n\n"
+            "Please write any further additions for this objection in this thread."
+        )
+        obj_thread_id = self.event.event_id
+        
+        cursor = self.store.vconn.cursor()
+        cursor.execute('''
+            INSERT INTO 
+                listening_threads (obj_room_id, sc_room_id, obj_thread_id, sc_thread_id)
+                VALUES(?, ?, ?, ?)
+        ''', [self.room.room_id, sc_room_id, obj_thread_id, sc_message_response.event_id])
+        
+        await send_text_to_thread(
+            self.client, self.room.room_id,
+            objection_room_text,
+            reply_to_event_id = obj_thread_id
+        )
+
 
     async def _get_dropbox(self):
         dropbox_link = self.store.dropbox_url

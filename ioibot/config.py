@@ -110,6 +110,7 @@ class Config:
         self.contestant_url = self._get_cfg(["datasource", "contestant_url"])
         self.testing_acc_url = self._get_cfg(["datasource", "testing_acc_url"])
         self.translation_acc_url = self._get_cfg(["datasource", "translation_acc_url"])
+        self.objection_room_url = self._get_cfg(["datasource", "objection_room_url"])
         self.token_url = self._get_cfg(["datasource", "token_url"])
         
         # dropbox configuration

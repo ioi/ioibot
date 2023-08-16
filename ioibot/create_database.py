@@ -28,4 +28,17 @@ def create_database():
 		'''
 	)
 
+
+	c.execute(
+		'''
+		CREATE TABLE IF NOT EXISTS listening_threads(
+			obj_room_id varchar NOT NULL,
+			sc_room_id varchar NOT NULL,
+			obj_thread_id varchar NOT NULL,
+			sc_thread_id varchar NOT NULL,
+			UNIQUE(obj_room_id, sc_room_id, obj_thread_id, sc_thread_id)
+		)
+		'''
+	)
+	
 	conn.commit()
