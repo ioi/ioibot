@@ -8,10 +8,13 @@ from nio.responses import RoomGetEventError
 from ioibot.chat_functions import react_to_event, send_text_to_room, send_text_to_thread, make_pill
 from ioibot.config import Config
 from ioibot.storage import Storage
+import shlex;
 
 import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+
+
 
 class User():
     def __init__(self, store: Storage, config: Config, username: str):
@@ -307,38 +310,109 @@ class Command:
         if not self.args:
             text = (
                 "Usage:  \n\n"
-                '- `poll new "<question>" "<choices-separated-with-/>"`: create new poll  \n'
-                '- `poll update <poll-id> "<question>" "<choices-separated-with-/>"`: update existing poll  \n'
+                '- `poll new "<question>" [--anonymous] [--multiple-choice] "mark1/choice 1" mark2/choice2 "mark3/choice 3" `: create new poll  \n'
+                # '- `poll update <poll-id> "<question>" "<choices-separated-with-/>"`: update existing poll  \n'
                 '- `poll list`: show list of created polls  \n'
                 '- `poll activate <poll-id>`: activate a poll  \n'
-                '- `poll deactivate`: deactivate all polls  \n\n'
+                '- `poll close`: deactivate all polls  \n\n'
+                'Note:  if an argument consists of multiple words you can wrap it in double quotes, otherwise you don\'t have to. \n'
 
                 "Examples:  \n\n"
-                '- `poll new "Is this a question?" "yes/no/abstain"`  \n'
-                '- `poll update 1 "What is 1+1?" "one/two/yes"`  \n'
+
+                '- `poll new "What is your favorite color?" 🟥/Red 🟧/Orange 🟨/Yellow 🟩/Green 🟦/Blue`  \n'
+                '- `poll new "What is your favorite number?" "1️⃣/One" "2️⃣/Two" "3️⃣/Three" "4️⃣/Four" --anonymous`  \n'
+                '- `poll new "What is your favorite letter?" "A" "B" "🅾️/O" --multiple-choice --anonymous`  \n'
+                '- `poll new "Is this a question?" yes no abstain"`  \n'
+
+                # '- `poll update 1 "What is 1+1?" "one/two/yes"`  \n'
                 '- `poll activate 10`'
             )
             await send_text_to_room(self.client, self.room.room_id, text)
-            return
 
         elif self.args[0].lower() == 'new':
             input_poll = ' '.join(self.args[1:])
-            input_poll = input_poll.split('"')[1::2]
+            arguments = shlex.split(input_poll)
+            
+            anonymous = 0
+            multiple_choice = 0
+            if "--anonymous" in arguments:
+                anonymous = 1
+                arguments.remove("--anonymous")
+
+            if "--multiple-choice" in arguments:
+                multiple_choice = 1
+                arguments.remove("--multiple-choice")
+
+            
+            # if there is any argument left with -- in it, it is invalid
+            for arg in arguments:
+                if arg.startswith("--"):
+                    await send_text_to_room(
+                        self.client, self.room.room_id,
+                        f"Command format is invalid, unknown option {arg}. Send `poll` to see all commands."
+                    )
+                    return
+            
 
             # wrong format: need more arguments, no double quotes, etc.
-            if(len(input_poll) < 2):
+            if(len(arguments) < 3):
                 await send_text_to_room(
                     self.client, self.room.room_id,
-                    "Command format is invalid. Send `poll` to see all commands."
+                    "Command is invalid, there must be a question and at least 2 choices.\nSend `poll` to see all commands."
                 )
                 return
 
+            question = arguments[0]
+            choices_with_markers = arguments[1:]
+
+            choices = [""] * len(choices_with_markers)
+            markers = [""] * len(choices_with_markers)
+
+            for i, choice_with_marker in enumerate(choices_with_markers):
+                if '/' in choice_with_marker:
+                    marker = choice_with_marker.split('/')[0]
+                    choice = choice_with_marker[len(marker)+1:]
+                    markers[i] = marker
+                    choices[i] = choice
+                else:
+                    choices[i] = choice_with_marker
+                    markers[i] = str(i+1)
+
+
+
+            # check if there is any duplicate marker or choice
+            if any([markers.count(marker) != 1 for marker in markers]):
+                await send_text_to_room(
+                    self.client, self.room.room_id,
+                    f"Command format is invalid, there are duplicate markers. Send `poll` to see all commands."
+                )
+                return
+                
+            if any([choices.count(choice) != 1 for choice in choices]):
+                await send_text_to_room(
+                    self.client, self.room.room_id,
+                    f"Command format is invalid, there are duplicate choices. Send `poll` to see all commands."
+                )
+                return
+
+
+            # insert poll
             cursor.execute(
-                '''INSERT INTO polls (question, choices, active) VALUES (?, ?, 0)''',
-                [input_poll[0], input_poll[1]]
+                '''INSERT INTO polls (question, status, anonymous, multiple_choice)
+                VALUES (?, ?, ?, ?)''',
+                [question, 0, anonymous, multiple_choice]
             )
+            
             poll_id = cursor.lastrowid
 
+            for i, (choice, marker) in enumerate(zip(choices, markers)):
+                cursor.execute(
+                    '''INSERT INTO poll_choices (poll_id, choice, marker)
+                    VALUES (?, ?, ?)''',
+                    [poll_id, choice, marker]
+                )
+            
+            
             await send_text_to_room(
                 self.client, self.room.room_id,
                 f"Poll created with ID {poll_id}.  \n"
@@ -346,55 +420,60 @@ class Command:
 
         elif self.args[0].lower() == 'update':
             # no id given
-            if len(self.args) < 2:
-                await send_text_to_room(
-                    self.client, self.room.room_id,
-                    "Command format is invalid. Send `poll` to see all commands."
-                )
-                return
+            # if len(self.args) < 2:
+            #     await send_text_to_room(
+            #         self.client, self.room.room_id,
+            #         "Command format is invalid. Send `poll` to see all commands."
+            #     )
+            #     return
 
-            poll_id = self.args[1]
-            try:
-                poll_id = int(poll_id)
-            except:
-                await send_text_to_room(
-                    self.client, self.room.room_id,
-                    "Poll ID must be an integer.  \n"
-                )
-                return
+            # poll_id = self.args[1]
+            # try:
+            #     poll_id = int(poll_id)
+            # except:
+            #     await send_text_to_room(
+            #         self.client, self.room.room_id,
+            #         "Poll ID must be an integer.  \n"
+            #     )
+            #     return
 
-            input_poll = ' '.join(self.args[2:])
-            input_poll = input_poll.split('"')[1::2]
+            # input_poll = ' '.join(self.args[2:])
+            # input_poll = input_poll.split('"')[1::2]
 
-            # wrong format: need more arguments, no double quotes, etc.
-            if(len(input_poll) < 2):
-                await send_text_to_room(
-                    self.client, self.room.room_id,
-                    "Command format is invalid. Send `poll` to see all commands."
-                )
-                return
+            # # wrong format: need more arguments, no double quotes, etc.
+            # if(len(input_poll) < 2):
+            #     await send_text_to_room(
+            #         self.client, self.room.room_id,
+            #         "Command format is invalid. Send `poll` to see all commands."
+            #     )
+            #     return
 
-            cursor.execute(
-                '''UPDATE polls SET question = ?, choices = ? WHERE poll_id = ?''',
-                [input_poll[0], input_poll[1], poll_id]
-            )
-            id_exist = cursor.execute('''SELECT changes()''').fetchall()[0][0]
+            # cursor.execute(
+            #     '''UPDATE polls SET question = ?, choices = ? WHERE poll_id = ?''',
+            #     [input_poll[0], input_poll[1], poll_id]
+            # )
+            # id_exist = cursor.execute('''SELECT changes()''').fetchall()[0][0]
 
-            if not id_exist:
-                await send_text_to_room(
-                    self.client, self.room.room_id,
-                    f"Poll {poll_id} does not exist.  \n"
-                )
-                return
+            # if not id_exist:
+            #     await send_text_to_room(
+            #         self.client, self.room.room_id,
+            #         f"Poll {poll_id} does not exist.  \n"
+            #     )
+            #     return
+
+            # await send_text_to_room(
+            #     self.client, self.room.room_id,
+            #     f"Poll {poll_id} updated.  \n"
+            # )
 
             await send_text_to_room(
                 self.client, self.room.room_id,
-                f"Poll {poll_id} updated.  \n"
+                "This command is not yet implemented."
             )
 
         elif self.args[0].lower() == 'list':
             cursor.execute(
-                '''SELECT poll_id, question, choices, active FROM polls'''
+                '''SELECT poll_id, question, status, anonymous, multiple_choice FROM polls'''
             )
             poll_list = cursor.fetchall()
 
@@ -405,17 +484,28 @@ class Command:
                 )
                 return
 
-            text = ""
-            for poll_detail in poll_list:
-                text += f"Poll {poll_detail[0]}"
-                if poll_detail[3]: # if poll is active
-                    text += " (active)"
-                text +=  ":  \n"
-                text += f'&emsp;&ensp;"{poll_detail[1]}"  \n'
+            cursor.execute(
+                '''SELECT poll_id, choice, marker FROM poll_choices'''
+            )
+            poll_choices_ungrouped = cursor.fetchall()
 
-                options = poll_detail[2].split('/')
-                options = '/'.join(("`"+option+"`") for option in options)
-                text += f"&emsp;&ensp;{options}  \n\n"
+
+            text = '## Created polls'
+            poll_choices = dict()
+            for poll_id, choice, marker in poll_choices_ungrouped:
+                if poll_id not in poll_choices:
+                    poll_choices[poll_id] = []
+                poll_choices[poll_id].append(f"{marker} / {choice}")
+
+            for poll_id, question, status, anonymous, multiple_choice  in poll_list:
+                text += '\n\n'
+                text += f'### [{poll_id}] {question}  \n'
+                text += f'anonymous: {"Yes" if anonymous else "No"}  \n'
+                text += f'multiple choice: {"Yes" if multiple_choice else "No"}  \n'
+                text += f'status: {["inactive", "active", "closed"][status]}  \n\n'
+
+                for choice in poll_choices[poll_id]:
+                    text += f'- {choice}  \n'
 
             await send_text_to_room(self.client, self.room.room_id, text)
 
@@ -447,12 +537,12 @@ class Command:
             if not id_exist:
                 await send_text_to_room(
                     self.client, self.room.room_id,
-                    f"Poll {poll_id} does not exist.  \n"
+                    f"Poll {poll_id} does not exist.  \n\nSend `poll list` to see all created polls.  \n"
                 )
                 return
 
             cursor.execute(
-                '''SELECT poll_id FROM polls WHERE active = 1'''
+                '''SELECT poll_id FROM polls WHERE status = 1'''
             )
             active_exist = cursor.fetchall()
 
@@ -464,34 +554,56 @@ class Command:
                 return
 
             cursor.execute(
-                '''UPDATE polls SET active = 1 WHERE poll_id = ?''',
+                '''UPDATE polls SET status = 1 WHERE poll_id = ?''',
                 [poll_id]
             )
 
             cursor.execute(
-                '''SELECT question, choices FROM polls WHERE poll_id = ?''',
+              '''SELECT question, status, anonymous, multiple_choice FROM polls WHERE poll_id = ?''',
+              [poll_id]
+            )
+            
+            poll_details = cursor.fetchone()
+            if not poll_details:
+                await send_text_to_room(
+                    self.client, self.room.room_id,
+                    f"Poll {poll_id} does not exist.  \n\nSend `poll list` to see all created polls.  \n"
+                )
+                return
+            
+            question, status, anonymous, multiple_choice = poll_details
+
+
+            cursor.execute(
+                '''SELECT choice, marker FROM poll_choices WHERE poll_id = ?''',
                 [poll_id]
             )
-            active_poll = cursor.fetchall()
+            poll_choices = cursor.fetchall()
 
-            options = active_poll[0][1].split('/')
-            options = '/'.join(("`"+option+"`") for option in options)
 
-            text = (
-                f"Active poll is now poll {poll_id}:  \n"
-                f'&emsp;&ensp;"{active_poll[0][0]}"  \n'
-                f"&emsp;&ensp;{options}  \n"
-            )
+            text = ""
+            text += f'### [{poll_id}] {question}  \n'
+            text += f'anonymous: {"Yes" if anonymous else "No"}  \n'
+            text += f'multiple choice: {"Yes" if multiple_choice else "No"}  \n'
+            text += f'status: {["inactive", "active", "closed"][status]}  \n\n'
+
+            for choice, marker in poll_choices:
+                text += f'- {marker}/{choice}  \n'
+
             await send_text_to_room(self.client, self.room.room_id, text)
 
         elif self.args[0] == 'deactivate':
-            cursor.execute(
-                '''UPDATE polls SET active = 0 WHERE active = 1'''
-            )
+            # cursor.execute(
+            #     '''UPDATE polls SET active = 0 WHERE active = 1'''
+            # )
 
+            # await send_text_to_room(
+            #     self.client, self.room.room_id,
+            #     "All polls deactivated.  \n"
+            # )
             await send_text_to_room(
                 self.client, self.room.room_id,
-                "All polls deactivated.  \n"
+                "This command is not yet implemented."
             )
 
         else:
@@ -501,63 +613,67 @@ class Command:
             )
 
     async def _vote(self):
-        cursor = self.store.vconn.cursor()
+        # cursor = self.store.vconn.cursor()
 
-        cursor.execute(
-            '''SELECT poll_id, question, choices FROM polls WHERE active = 1'''
+        # cursor.execute(
+        #     '''SELECT poll_id, question, choices FROM polls WHERE active = 1'''
+        # )
+        # active_poll = cursor.fetchall()
+
+        # if not active_poll:
+        #     await send_text_to_room(
+        #         self.client, self.room.room_id,
+        #         "There is no active poll to vote!  \n"
+        #     )
+        #     return
+
+        # active_poll = active_poll[0]
+        # poll_id  = active_poll[0]
+        # question = active_poll[1]
+        # choices  = active_poll[2].split('/')
+
+        # if not self.args:
+        #     text  = f'Question: "{question}"  \n\n'
+        #     text += f"You are voting on behalf of the {self.user.country} team.  \n\n"
+        #     text += "Vote by sending one of: \n\n"
+        #     for choice in choices:
+        #         text += f"- `vote {choice}`  \n"
+
+        #     await send_text_to_room(self.client, self.room.room_id, text)
+
+        # elif ' '.join(self.args) in choices:
+        #     self.args = ' '.join(self.args)
+
+        #     text = (
+        #         f'Question: "{question}"  \n\n'
+        #         f"You voted `{self.args}` on behalf of the {self.user.country} team."
+        #         " Please wait for your vote to be displayed on the screen.  \n\n"
+        #         "You can amend your vote by resending your vote.  \n"
+
+        #     )
+        #     await send_text_to_room(self.client, self.room.room_id, text)
+
+        #     cursor.execute(
+        #         '''
+        #         INSERT INTO votes (poll_id, team_code, choice, voted_by, voted_at)
+        #         VALUES (?, ?, ?, ?, datetime("now", "localtime"))
+        #         ON CONFLICT(poll_id, team_code) DO UPDATE
+        #         SET choice = excluded.choice, voted_by = excluded.voted_by, voted_at = datetime("now", "localtime")
+        #         ''',
+        #         [poll_id, self.user.team, self.args, self.user.username]
+        #     )
+
+        # else:
+        #     text  = "Your vote is invalid.  \n\n"
+        #     text += "Vote by sending one of:  \n\n"
+        #     for choice in choices:
+        #         text += f"- `vote {choice}`  \n"
+
+        #     await send_text_to_room(self.client, self.room.room_id, text)
+        await send_text_to_room(
+            self.client, self.room.room_id,
+            "This command is not yet implemented."
         )
-        active_poll = cursor.fetchall()
-
-        if not active_poll:
-            await send_text_to_room(
-                self.client, self.room.room_id,
-                "There is no active poll to vote!  \n"
-            )
-            return
-
-        active_poll = active_poll[0]
-        poll_id  = active_poll[0]
-        question = active_poll[1]
-        choices  = active_poll[2].split('/')
-
-        if not self.args:
-            text  = f'Question: "{question}"  \n\n'
-            text += f"You are voting on behalf of the {self.user.country} team.  \n\n"
-            text += "Vote by sending one of: \n\n"
-            for choice in choices:
-                text += f"- `vote {choice}`  \n"
-
-            await send_text_to_room(self.client, self.room.room_id, text)
-
-        elif ' '.join(self.args) in choices:
-            self.args = ' '.join(self.args)
-
-            text = (
-                f'Question: "{question}"  \n\n'
-                f"You voted `{self.args}` on behalf of the {self.user.country} team."
-                " Please wait for your vote to be displayed on the screen.  \n\n"
-                "You can amend your vote by resending your vote.  \n"
-
-            )
-            await send_text_to_room(self.client, self.room.room_id, text)
-
-            cursor.execute(
-                '''
-                INSERT INTO votes (poll_id, team_code, choice, voted_by, voted_at)
-                VALUES (?, ?, ?, ?, datetime("now", "localtime"))
-                ON CONFLICT(poll_id, team_code) DO UPDATE
-                SET choice = excluded.choice, voted_by = excluded.voted_by, voted_at = datetime("now", "localtime")
-                ''',
-                [poll_id, self.user.team, self.args, self.user.username]
-            )
-
-        else:
-            text  = "Your vote is invalid.  \n\n"
-            text += "Vote by sending one of:  \n\n"
-            for choice in choices:
-                text += f"- `vote {choice}`  \n"
-
-            await send_text_to_room(self.client, self.room.room_id, text)
 
     async def invite(self):
         """Invite all accounts with role to room"""
