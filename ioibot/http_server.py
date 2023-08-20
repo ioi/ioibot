@@ -15,12 +15,12 @@ async def create_app():
 
 	# website
 	@routes.get('/polls')
-	async def home(request):
+	async def polls(request):
 		return web.FileResponse('./webpage/index.html')
 
 	# return currently active poll result
 	@routes.get('/polls/active')
-	async def home(request):
+	async def polls_active(request):
 		cursor.execute(
 			'''SELECT poll_id, question FROM polls WHERE active = 1'''
 		)
