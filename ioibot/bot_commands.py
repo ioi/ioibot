@@ -914,7 +914,7 @@ class Command:
 
 
         objection_rooms = self.store.objection_rooms
-        sc_room_id = objection_rooms.loc[objection_rooms['Objection Room ID'] == self.room.room_id, 'SC Room ID']
+        sc_room_id = objection_rooms.loc[objection_rooms['Objection Room ID'] == self.room.room_id, ['SC Room ID']]
         if sc_room_id.empty:
             await send_text_to_room(
                 self.client, self.room.room_id,
@@ -968,7 +968,7 @@ class Command:
         else:
             day = 2
 
-        url = dropbox_link.loc[dropbox_link['RealTeamCode'] == real_team_code, "Day " + str(day)]
+        url = dropbox_link.loc[dropbox_link['RealTeamCode'] == real_team_code, ["Day " + str(day)]]
         if url.empty:
             await send_text_to_room(
                 self.client, self.room.room_id,
