@@ -13,6 +13,7 @@ def create_database():
                 poll_id integer PRIMARY KEY AUTOINCREMENT,
                 question varchar NOT NULL,
                 status integer NOT NULL CHECK(status IN (0, 1, 2)), -- 0: inactive, 1: active, 2: closed
+                display bit NOT NULL,
                 anonymous bit NOT NULL,
                 multiple_choice bit NOT NULL
             )
