@@ -4,6 +4,8 @@ volumes:
   # Set up with `docker volume create ...`. See docker/README.md for more info.
   data_volume:
     external: true
+  web_page_volume:
+    external: true
   pg_data_volume:
 
 services:
@@ -47,6 +49,8 @@ services:
       #  PYTHON_VERSION: 3.8
     volumes:
       - data_volume:/data
+      - web_page_volume:/src/webpage
+
     # Used for allowing connections to homeservers hosted on the host machine
     # (while docker host networking mode is still broken on Linux).
     #

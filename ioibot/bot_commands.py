@@ -346,30 +346,30 @@ class Command:
 
     @assume(lambda self: self.args, (
                 "Usage:  \n\n"
-                '- `poll new [--options ...] "<question>" "mark1/choice 1" mark2/choice2 "mark3/choice 3" ... `: create new poll  \n'
-                '  - options:  \n'
-                '    - `-a, --anonymous`: make the poll anonymous  \n'
-                '    - `-m, --multiple-choice`: allow multiple choices  \n'
-                '    - `-d, --display`: set to show  \n'
-                '    - `-s, --start`: set to active if no other pool is open  \n'
-                '- `poll update <poll-id> [--anonymous] [--multiple-choice] "<question>" "mark1/choice 1" mark2/choice2 "mark3/choice 3" ...`: update existing poll  \n'
-                '  - options:  \n'
-                '    - `--anonymous`: make the poll anonymous  \n'
-                '    - `--multiple-choice`: allow multiple choices  \n'
-                '- `poll update <poll-id> [--anonymous] [--multiple-choice] "<question>"`: update existing poll but leave the choices  \n'
+                '- `poll new [--options ...] "<question>" "<mark1>/<choice 1>" "<mark 2>/<choice 2>" "<mark3>/<choice 3>" ... `: create new poll  \n'
+                '- `poll update <poll-id> [--options ...] "<question>" "<mark 1>/<choice 1>" "<mark 2>/<choice 2>" "<mark 3>/<choice 3>" ...`: update existing poll  \n'
+                '- `poll update <poll-id> [--options ...] "[question]"`: update existing poll but leave the choices  \n'
                 '- `poll list`: show list of created polls  \n'
                 '- `poll clear-display`: clears the displayed poll from the web interface  \n'
                 '- `poll activate <poll-id>`: activate a poll  \n'
                 '- `poll close`: deactivate all polls  \n\n'
-                'Note:  if an argument consists of multiple words you can wrap it in double quotes, otherwise you don\'t have to. \n'
 
-                "Examples:  \n\n"
-                '- `poll new "What is your favorite color?" 🟥/Red 🟧/Orange 🟨/Yellow 🟩/Green 🟦/Blue`  \n'
-                '- `poll new --anonymous "What is your favorite number?" "1️⃣/One" "2️⃣/Two" "3️⃣/Three" "4️⃣/Four" `  \n'
-                '- `poll new  --multiple-choice --anonymous "What is your favorite letter?" "A" "B" "🅾️/O"`  \n'
-                '- `poll new "Is this a question?" yes no abstain"`  \n'
-                '- `poll update 1 "What is 1+1?" one two three`  \n'
-                '- `poll activate 10`'
+                'Ooptions for `new` and `update`:  \n'
+                '    - `-a, --anonymous`: make the poll anonymous  \n'
+                '    - `-m, --multiple-choice`: allow multiple choices  \n'
+                '    - `-d, --display`: set to show  \n'
+                '    - `-s, --start`: set to active if no other pool is open  \n\n'
+                
+                'Note:  if an argument consists of multiple words you can wrap it in double quotes, otherwise you don\'t have to.  \n\n'
+                
+                "Examples:  \n"
+                '- `poll new "What is your favorite color?" 🟥/Red 🟧/Orange 🟨/Yellow 🟩/Green 🟦/Blue`: creates a poll  \n'
+                '- `poll new --anonymous "What is your favorite number?" "1️⃣/One" "2️⃣/Two" "3️⃣/Three" "4️⃣/Four"`: creates an anonymous poll   \n'
+                '- `poll new  --multiple-choice --anonymous "What is your favorite letter?" "A" "B" "🅾️/O"`: creates an anonym, multiple choice poll   \n'
+                '- `poll new "Is this a question?" yes no abstain"`: creates a poll with the default markers  \n'
+                '- `poll update 1 -ma "What is 1+1?" one two three`: changes the existing poll 1 to be anonym and multiple choice, also rewrites the question and answers  \n'
+                '- `poll update 1 -d`: sets poll 1 to be displayed  \n'
+                '- `poll activate 10`: opens poll 10 for voting  \n'
     ))
     async def _manage_poll(self):
         cursor = self.store.vconn.cursor()

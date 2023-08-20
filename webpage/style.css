@@ -42,13 +42,9 @@ span {
     margin: 0 40px !important;
 }
 
-/* header */
-#header {
-    margin-bottom: 60px !important;
-}
-
 #ioiLogo {
-    height: 60px;
+    max-width: 100%;
+    height: auto;
 }
 
 /* guide */
@@ -57,11 +53,6 @@ span {
     bottom: 120px;
     text-align: center;
     width: calc(100% - 80px);
-}
-
-/* question */
-#question {
-    margin-bottom: 80px !important;
 }
 
 /* vote result of countries */
