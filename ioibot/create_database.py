@@ -35,7 +35,7 @@ def create_database():
         cursor.execute(
             """
             CREATE TABLE IF NOT EXISTS poll_anonym_active_votes(
-                poll_choice_id integer NOT NULL,
+                poll_choice_id integer NOT NULL PRIMARY KEY,
                 team_code varchar NOT NULL,
                 UNIQUE(poll_choice_id, team_code),
                 FOREIGN KEY (poll_choice_id) REFERENCES poll_choices(poll_choice_id)
@@ -57,11 +57,14 @@ def create_database():
             """
             CREATE TABLE IF NOT EXISTS poll_votes(
                 poll_choice_id integer NOT NULL,
+                poll_id integer NOT NULL,
                 team_code varchar NOT NULL,
                 voted_by varchar NOT NULL,
                 voted_at datetime NOT NULL,
                 UNIQUE(poll_choice_id, team_code),
                 FOREIGN KEY (poll_choice_id) REFERENCES poll_choices(poll_choice_id)
+                FOREIGN KEY (poll_id) REFERENCES polls(poll_id)
+                FOREIGN KEY (poll_choice_id, poll_id) REFERENCES poll_choices (poll_choice_id, poll_id)
             )
             """
         )
