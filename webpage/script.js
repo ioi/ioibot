@@ -1,124 +1,112 @@
+// Credits https://stackoverflow.com/a/34890276
+var groupBy = function(xs, key) {
+  return xs.reduce(function(rv, x) {
+    (rv[x[key]] = rv[x[key]] || []).push(x);
+    return rv;
+  }, {});
+};
+
+let choices = null
+let chart = null
+
+function check() {
+  if(choices == null) {
+     window.setTimeout(check, 100); /* this checks the flag every 100 milliseconds*/
+  } else {
+    setup();
+  }
+}
+
+
+function setup() {
+  let ctx = document.getElementById('aggregate');
+  chart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: Object.entries(choices).map(arr => arr[1]).map(c => `${c.marker}/${c.choice}`),
+      datasets: [{
+        data: Object.entries(choices).map(arr => arr[1]).map(c => c.count),
+        borderWidth: 1
+      }]
+    },
+    options: {
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      },
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: false
+        }
+      }
+    }
+  });
+}
+
+function updateChart() {
+  if (chart == null) {
+    return;
+  }
+
+  chart.data.datasets[0].data = Object.entries(choices).map(arr => arr[1]).map(c => c.count);
+  chart.labels = Object.entries(choices).map(arr => arr[1]).map(c => `${c.marker}/${c.choice}`);
+  chart.update();
+
+}
+
 function fetchPollResult() {
   $.get("/polls/display", function(json_data) {
 
     const data = json_data;
     const question = data.question;
-    const choices = data.choices;
+    choices = Object.fromEntries(
+      [...data.choices.map(
+        e => [e.choice_id, {choice: e.choice, marker: e.marker, count: 0}]
+        ),
+        [null, {choice: "Pending", marker: "⏳", count: 0}]
+      ]
+    )
+
+
+    window.choices = choices
     const anonymous = data.anonymous;
     const multiple_choice = data.multiple_choice;
     const status = data.status;
-    const votes = data.votes;
-
-    $("#question").html(question);
-    $("#anonymous").html(anonymous ? 'Yes' : 'No')
-    $("#multiple_choice").html(multiple_choice ? 'Yes' : 'No')
-    $("#status").html(`<span class="font-weight-bold text-${['info', 'success', 'warning'][status]}">${['Inactive', 'Active', 'closed'][status]}</span>`)
+    const ungrouped_votes = data.votes;
+    
+    // group votes by the team code
+    $("#question").text(question);
+    $("#anonymous").text(anonymous ? 'Yes' : 'No');
+    $("#multiple-choice").text(multiple_choice ? 'Yes' : 'No');
+    $("#status").html(DOMPurify.sanitize(`<span class="fw-bold text-${['info', 'success', 'warning'][status]}">${['Inactive', 'Active', 'closed'][status]}</span>`));
     if (anonymous) {
     
     } else {
-      $('#result').html(
-          votes.map((vote) => {
-            console.log(vote.marker)
-            return `
-              <div>sanyiii<span title="${vote.voted_at} / ${vote.voted_by}">${vote.marker}</span> &emsp; ${vote.team_code}</div>
-            `
-          }).join()
-      )
-    }
+      ungrouped_votes.forEach(vote => {
+        choices[vote.choice_id].count += 1;
+      });
+      updateChart();
 
+      const votes = groupBy(ungrouped_votes, 'team_code');
+      $('#result').html(DOMPurify.sanitize(
+        Object.entries(votes).map(([team_code, votes_by_team]) => {
+          return (` 
+              <div class="col-12 col-sm-6 col-md-4 col-lg-3 col-xl-2 text-nowrap text-truncate">
+              ${
+                votes_by_team.map(vote => `<span title="${vote.voted_at ?? "pending"} / ${vote.voted_by ?? "pending"}">${choices[vote.choice_id].marker}</span>`).join('')
+              } 
+                &emsp; <span title="${team_code}">${team_code}</span>
+              </div>
+            `);
+          }).join('')
+      ))
+    }
 
     setTimeout(function () {
       fetchPollResult(data);
     }, 3000); 
   });
-}
-
-function refreshPoll(data) {
-  $(".countryVote").remove();
-  $("#guide").empty();
-  if(Object.keys(data).length === 0) {
-    $("#question").html("No poll is currently active.")
-    return;
-  }
-
-  $("#question").html(data.question);
-  $("#guide").html('Cast your vote by sending "vote" to @ioibot');
-
-  const imgLink = {
-    "yes"     : "./webpage/asset/yes.png",
-    "no"      : "./webpage/asset/no.png",
-    "abstain" : "./webpage/asset/abstain.png",
-    null      : "./webpage/asset/empty.png"
-  };
-
-  var column = 10;
-  var index = 0;
-  var $result = $("#result");
-  for(var key in data.votes) {
-    if(!data.votes.hasOwnProperty(key)) {
-      continue;
-    }
-
-    var img = '<img class="align-self-center mr-3 choice" src="' + 
-               imgLink[data.votes[key]] + '">';
-
-    key = key.toUpperCase()
-    var country = '<div class="align-self-center media-body country"><span>' 
-                  + key + '</span></div>';
-
-    var $countryVote = $('<div class="media countryVote"></div>');
-    $countryVote.append(img);
-    $countryVote.append(country)
-    $result.append($countryVote);
-  }
-}
-
-function refreshCounter(data) {
-  counter = {
-    "yes"     : 0,
-    "no"      : 0,
-    "abstain" : 0,
-    null    : 0
-  };
-
-  statement = {
-    "yes"     : "Yes",
-    "no"      : "No",
-    "abstain" : "Abstain",
-    null      : "none"
-  };
-
-  for(var key in data.votes) {
-    if(!data.votes.hasOwnProperty(key)) {
-      continue;
-    }
-    counter[data.votes[key]]++;
-  }
-
-  var yesPerc = 0;
-  var noPerc = 0;
-  if(counter["yes"] + counter["no"] > 0) {
-    yesPerc = 100 * counter["yes"] / (counter["yes"] + counter["no"]);
-    noPerc = 100 - yesPerc;
-
-    yesPerc = yesPerc.toFixed(2);
-    noPerc = noPerc.toFixed(2);
-  }
-
-  for(var key in counter) {
-    var elementID = `#${key}Count`;
-    var text = `${statement[key]} : ${counter[key]}`;
-    if(key == "yes") {
-      text += ` (${yesPerc}%)`
-    }
-    else if(key == "no") {
-      text += ` (${noPerc}%)`
-    }
-
-    $(elementID).html(text);
-  }
-}
-
-function roundDec(num, dec) {
-  return Number(Math.round(num + "e" + dec) + "e-" + dec)
 }

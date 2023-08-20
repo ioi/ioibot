@@ -1,7 +1,6 @@
 * {
     margin: 0;
     padding: 0;
-    overflow: hidden;
 }
 
 body {
@@ -53,15 +52,6 @@ span {
     bottom: 120px;
     text-align: center;
     width: calc(100% - 80px);
-}
-
-/* vote result of countries */
-#result {
-    justify-content: center;
-    margin: 0 40px;
-    width: 100%;
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
 }
 
 .country {
