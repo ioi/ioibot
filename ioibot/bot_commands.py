@@ -1004,7 +1004,10 @@ class Command:
         if not self.args:
             text = (
                 "Usage:  \n\n"
-                "- `objection <Optional: Major/Minor> <content>`: Send objection to the SC.\n"
+                "- `objection <Optional: Major/Minor> <content>`: Send objection to the SC.  \n\n"
+                "Examples:  \n"
+                "- `objection Major It's unclear whether the ranges are inclusive or exclusive!`: Send Major objection to the SC.\n"
+                "- `objection The name is misspelled in the provided output`: Send (default) Minor objection to the SC.\n"
             )
             await send_text_to_room(self.client, self.room.room_id, text)
             return
