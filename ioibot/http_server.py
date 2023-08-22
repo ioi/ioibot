@@ -13,7 +13,7 @@ async def create_app():
     with open("/data/config.yaml", "r") as file_stream:
         config = yaml.safe_load(file_stream)
     teams_all = pd.read_csv(config["datasource"]["team_url"])
-    teams = teams_all[~teams_all['Code'].str.contains('ioi', case=False)]
+    teams = teams_all[teams_all['Voting'] == 1]
 
 
     # website

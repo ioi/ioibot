@@ -141,7 +141,8 @@ class Command:
                 )
                 return
 
-            if "IOI" in self.user.team:
+            team = self.store.teams.loc[self.store.teams['Code'] == self.user.team]
+            if not team.empty and team.iloc[0]['Voting'] == 0:
                 await send_text_to_room(
                     self.client, self.room.room_id,
                     "Sorry, you are not allowed to vote."
