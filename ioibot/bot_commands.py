@@ -141,12 +141,12 @@ class Command:
                 )
                 return
 
-            # if self.user.team == "IOI":
-            #     await send_text_to_room(
-            #         self.client, self.room.room_id,
-            #         "Sorry, you are not allowed to vote."
-            #     )
-            #     return
+            if "IOI" in self.user.team:
+                await send_text_to_room(
+                    self.client, self.room.room_id,
+                    "Sorry, you are not allowed to vote."
+                )
+                return
 
             await self._vote()
 
@@ -364,7 +364,9 @@ class Command:
                 
                 "Examples:  \n"
                 '- `poll new "What is your favorite color?" 🟥/Red 🟧/Orange 🟨/Yellow 🟩/Green 🟦/Blue`: creates a poll  \n'
+                '- `poll new -ds "Question?" "✅/Vote for motion" "❌/Vote against motion" "➖/Abstain"`: creates, displays and starts a poll   \n'
                 '- `poll new --anonymous "What is your favorite number?" "1️⃣/One" "2️⃣/Two" "3️⃣/Three" "4️⃣/Four"`: creates an anonymous poll   \n'
+                
                 '- `poll new  --multiple-choice --anonymous "What is your favorite letter?" "A" "B" "🅾️/O"`: creates an anonym, multiple choice poll   \n'
                 '- `poll new "Is this a question?" yes no abstain"`: creates a poll with the default markers  \n'
                 '- `poll update 1 -ma "What is 1+1?" one two three`: changes the existing poll 1 to be anonym and multiple choice, also rewrites the question and answers  \n'
@@ -486,14 +488,12 @@ class Command:
             input_poll = ' '.join(args)
             (arguments, err, (anonymous, multiple_choice, display, start)) = _get_options(shlex.split(input_poll))
             
-            if status != 0 and anonymous == 0 and multiple_choice == 0 and start == 0 and len(arguments) == 0:
-                if display:
-                    cursor.execute('UPDATE polls SET display = CASE WHEN poll_id = ? THEN 1 ELSE 0 END', [poll_id])
-                    await send_text_to_room(self.client, self.room.room_id, f'Poll {poll_id} is now displayed.  \n')
-                    return
-            elif await self._validate(status == 0, f"Poll {poll_id} is {['inactive', 'active', 'closed'][status]}, it cannot be updated  \n"): return;
-            
+            if anonymous == 0 and multiple_choice == 0 and start == 0 and len(arguments) == 0 and display == 1: # only the display is changed
+                cursor.execute('UPDATE polls SET display = CASE WHEN poll_id = ? THEN 1 ELSE 0 END', [poll_id])
+                await send_text_to_room(self.client, self.room.room_id, f'Poll {poll_id} is now displayed.  \n')
+                return
 
+            if await self._validate(status == 0, f"Poll {poll_id} is {['inactive', 'active', 'closed'][status]}, it cannot be updated  \n"): return;
 
             if len(arguments) <= 1: # only update the question
                 if display:

@@ -52,8 +52,8 @@ async def create_app():
 
                     votes = [{'count': count, 'choice_id': choice} for (choice, count) in results.items()]
                 else:
-                    return web.HTTPInternalServerError()
-
+                    votes = []
+                    
             elif status == 2:
                 cursor.execute("SELECT poll_choice_id, count FROM poll_anonym_votes WHERE poll_id = ?", [poll_id])
                 votes_exists = cursor.fetchall()
