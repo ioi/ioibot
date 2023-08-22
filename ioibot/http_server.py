@@ -12,7 +12,9 @@ async def create_app():
     cursor = conn.cursor()
     with open("/data/config.yaml", "r") as file_stream:
         config = yaml.safe_load(file_stream)
-    teams = pd.read_csv(config["datasource"]["team_url"])
+    teams_all = pd.read_csv(config["datasource"]["team_url"])
+    teams = teams_all[~teams_all['Code'].str.contains('ioi', case=False)]
+
 
     # website
     @routes.get("/polls")
@@ -53,7 +55,7 @@ async def create_app():
                     votes = [{'count': count, 'choice_id': choice} for (choice, count) in results.items()]
                 else:
                     votes = []
-                    
+
             elif status == 2:
                 cursor.execute("SELECT poll_choice_id, count FROM poll_anonym_votes WHERE poll_id = ?", [poll_id])
                 votes_exists = cursor.fetchall()
@@ -116,7 +118,7 @@ async def create_app():
 
                     votes = [{'count': count, 'choice_id': choice} for (choice, count) in results.items()]
                 else:
-                    return web.HTTPInternalServerError()
+                    votes = []
 
             elif status == 2:
                 cursor.execute("SELECT poll_choice_id, count FROM poll_anonym_votes WHERE poll_id = ?", [poll_id])
