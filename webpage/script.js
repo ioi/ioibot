@@ -60,51 +60,77 @@ function updateChart() {
 function fetchPollResult() {
   $.get("/polls/display", function(json_data) {
 
-    const data = json_data;
-    const question = data.question;
-    choices = Object.fromEntries(
-      [...data.choices.map(
-        e => [e.choice_id, {choice: e.choice, marker: e.marker, count: 0}]
-        ),
-        [null, {choice: "Pending", marker: "⏳", count: 0}]
-      ]
-    )
+    const get_data = function() {
+      if ($.isEmptyObject(json_data)) {
+        $('#poll-exists').hide();
+        $('#no-poll').show();
+        return {};
+      }
+
+      const data = json_data;
+      const question = data.question;
+      const anonymous = data.anonymous;
+      const multiple_choice = data.multiple_choice;
+      const status = data.status;
+      const ungrouped_votes = data.votes;
+
+      if (anonymous) {
+        choices = Object.fromEntries(
+          data.choices.map(
+            e => [e.choice_id, {choice: e.choice, marker: e.marker, count: 0}]
+          )
+        )
+      } else {
+        choices = Object.fromEntries(
+          [...data.choices.map(
+            e => [e.choice_id, {choice: e.choice, marker: e.marker, count: 0}]
+            ),
+            [null, {choice: "Pending", marker: "⏳", count: 0}]
+          ]
+        )
+      }
 
 
-    window.choices = choices
-    const anonymous = data.anonymous;
-    const multiple_choice = data.multiple_choice;
-    const status = data.status;
-    const ungrouped_votes = data.votes;
-    
-    // group votes by the team code
-    $("#question").text(question);
-    $("#anonymous").text(anonymous ? 'Yes' : 'No');
-    $("#multiple-choice").text(multiple_choice ? 'Yes' : 'No');
-    $("#status").html(DOMPurify.sanitize(`<span class="fw-bold text-${['info', 'success', 'warning'][status]}">${['Inactive', 'Active', 'closed'][status]}</span>`));
-    if (anonymous) {
-    
-    } else {
-      ungrouped_votes.forEach(vote => {
-        choices[vote.choice_id].count += 1;
-      });
-      updateChart();
+      // group votes by the team code
+      $("#question").text(question);
+      $("#anonymous").text(anonymous ? 'Yes' : 'No');
+      $("#multiple-choice").text(multiple_choice ? 'Yes' : 'No');
+      $("#status").html(DOMPurify.sanitize(`<span class="fw-bold text-${['info', 'success', 'warning'][status]}">${['Inactive', 'Active', 'closed'][status]}</span>`));
+      if (anonymous) {
+        ungrouped_votes.forEach(vote => {
+          choices[vote.choice_id].count += vote.count;
+        });
+        updateChart();
 
-      const votes = groupBy(ungrouped_votes, 'team_code');
-      $('#result').html(DOMPurify.sanitize(
-        Object.entries(votes).map(([team_code, votes_by_team]) => {
-          return (` 
-              <div class="col-12 col-sm-6 col-md-4 col-lg-3 col-xl-2 text-nowrap text-truncate">
-              ${
-                votes_by_team.map(vote => `<span title="${vote.voted_at ?? "pending"} / ${vote.voted_by ?? "pending"}">${choices[vote.choice_id].marker}</span>`).join('')
-              } 
-                &emsp; <span title="${team_code}">${team_code}</span>
-              </div>
-            `);
-          }).join('')
-      ))
-    }
+        $('#result').html('');
+      } else {
+        ungrouped_votes.forEach(vote => {
+          choices[vote.choice_id].count += 1;
+        });
+        updateChart();
 
+        const votes = groupBy(ungrouped_votes, 'team_code');
+        $('#result').html(DOMPurify.sanitize(
+          Object.entries(votes).map(([team_code, votes_by_team]) => {
+            return (` 
+                <div class="col-12 col-sm-6 col-md-4 col-lg-3 col-xl-2 text-nowrap text-truncate">
+                ${
+                  votes_by_team.map(vote => `<span title="${vote.voted_at ?? "pending"} / ${vote.voted_by ?? "pending"}">${choices[vote.choice_id].marker}</span>`).join('')
+                } 
+                  &emsp; <span title="${team_code}">${team_code}</span>
+                </div>
+              `);
+            }).join('')
+        ))
+      }
+
+      $('#poll-exists').show();
+      $('#no-poll').hide();
+
+      return data;
+    };
+
+    const data = get_data();
     setTimeout(function () {
       fetchPollResult(data);
     }, 3000); 
