@@ -62,15 +62,15 @@ RUN mkdir -p ioibot
 COPY ioibot/__init__.py ioibot/__init__.py
 RUN pip install -e ".[postgres]"
 COPY ioibot ./ioibot
+COPY webpage ./webpage
 
-# COPY webpage ./webpage
 
 # Now copy the source code
 COPY *.py ./
 
 # Specify a volume that holds the config file, SQLite3 database,
 # and the matrix-nio store
-VOLUME ["/data", "/src/webpage"]
+VOLUME ["/data"]
 
 # Start the app
 ENTRYPOINT ["ioi-bot", "/data/config.yaml"]
