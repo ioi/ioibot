@@ -1005,10 +1005,10 @@ class Command:
         if not self.args:
             text = (
                 "Usage:  \n\n"
-                "- `objection <Optional: Major/Minor> <content>`: Send objection to the SC.  \n\n"
+                "- `!c objection <Optional: Major/Minor> <content>`: Send objection to the SC.  \n\n"
                 "Examples:  \n"
-                "- `objection Major It's unclear whether the ranges are inclusive or exclusive!`: Send Major objection to the SC.\n"
-                "- `objection The name is misspelled in the provided output`: Send (default) Minor objection to the SC.\n"
+                "- `!c objection Major It's unclear whether the ranges are inclusive or exclusive!`: Send Major objection to the SC.  \n"
+                "- `!c objection The name is misspelled in the provided output`: Send (default) Minor objection to the SC.  \n"
             )
             await send_text_to_room(self.client, self.room.room_id, text)
             return
@@ -1036,7 +1036,7 @@ class Command:
                 "This room is not an objection room. Please contact HTC for details."
             )
             return
-        sc_room_id = sc_room_id.values[0]
+        sc_room_id = sc_room_id.values[0][0]
 
         original_post = f"https://matrix.to/#/{self.room.room_id}/{self.event.event_id}?via={self.config.homeserver_url}"
         
