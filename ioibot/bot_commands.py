@@ -152,6 +152,9 @@ class Command:
             await self._vote()
 
         elif self.command.startswith("invite"):
+            await send_text_to_room(self.client, self.room.room_id, "This command is turned off")
+            return
+
             if not self.user.is_tc():
                 await send_text_to_room(
                     self.client, self.room.room_id,
@@ -182,6 +185,9 @@ class Command:
             await self._objection()
 
         elif self.command.startswith("dropbox"):
+            await send_text_to_room(self.client, self.room.room_id, "This command is turned off")
+            return
+
             if not self.user.is_leader():
                 await send_text_to_room(
                     self.client, self.room.room_id,
@@ -192,6 +198,9 @@ class Command:
             await self._get_dropbox()
 
         elif self.command.startswith("token"):
+            await send_text_to_room(self.client, self.room.room_id, "This command is turned off")
+            return
+
             if not self.user.is_leader():
                 await send_text_to_room(
                     self.client, self.room.room_id,
@@ -227,10 +236,9 @@ class Command:
         """Show the help text"""
 
         text = ""
-        text += "Hello, I am IOI 2022 bot. I understand several commands:  \n\n"
+        text += "Hello, I am IOI 2023 bot. I understand several commands:  \n\n"
         text += "- `info`: shows various team information\n"
         text += "- `accounts`: shows various accounts for your team\n"
-        text += "- `dropbox`: shows Dropbox upload links for your team\n"
         text += "- `vote`: casts vote for your team\n"
 
         await send_text_to_room(self.client, self.room.room_id, text)
