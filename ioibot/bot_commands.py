@@ -345,7 +345,7 @@ class Command:
         poll_choices.sort(key=lambda x: x[0]) # sort by id
         if user_choices is not None:
             for i, (poll_choice_id, choice, marker) in enumerate(poll_choices):
-                text += f'{i + 1}. { "☑️" if poll_choice_id in user_choices else "✔️"} &emsp; {marker}/{choice}  \n'
+                text += f'{ "**" if poll_choice_id in user_choices else ""}{i + 1}.&emsp;{marker}&emsp;{choice}{ "**" if poll_choice_id in user_choices else ""}  \n'
         else:
             for _, choice, marker in poll_choices:
                 text += f'- {marker}/{choice}  \n'
