@@ -495,7 +495,15 @@ class Command:
             (question_db, status) = poll_exists
 
             input_poll = ' '.join(args)
-            (arguments, err, (anonymous, multiple_choice, display, start)) = _get_options(shlex.split(input_poll))
+            
+            try:
+              (arguments, err, (anonymous, multiple_choice, display, start)) = _get_options(shlex.split(input_poll))
+            except Exception as e:
+              err_message="Wrong format"
+              if hasattr(e, 'message'):
+                  err_message = e.message
+              await send_text_to_room(self.client, self.room.room_id, f"Format Error: {err_message}")
+              return
             
             if anonymous == 0 and multiple_choice == 0 and start == 0 and len(arguments) == 0 and display == 1: # only the display is changed
                 cursor.execute('UPDATE polls SET display = CASE WHEN poll_id = ? THEN 1 ELSE 0 END', [poll_id])
@@ -730,7 +738,15 @@ class Command:
 
         if self.args[0].lower() == 'new':
             input_poll = ' '.join(self.args[1:])
-            arguments = shlex.split(input_poll)
+            try:
+              arguments = shlex.split(input_poll)
+            except Exception as e:
+              err_message="Wrong format"
+              if hasattr(e, 'message'):
+                  err_message = e.message
+              await send_text_to_room(self.client, self.room.room_id, f"Format Error: {err_message}")
+              return
+
             await _new(arguments)
 
         elif self.args[0].lower() == 'update':
