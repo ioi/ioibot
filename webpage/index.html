@@ -16,7 +16,7 @@
   <title>Vote Result</title>
 
   <script>
-   
+
     $(document).ready(function () {
       fetchPollResult();
     });
@@ -24,30 +24,37 @@
 </head>
 
 <body>
-  <div id="poll-exists">
-    <div class="row justify-content-center pt-4 pb-5" id="header">
-      <div class="col-12 col-lg-3 align-middle d-flex justify-content-center float-none float-lg-start">
-        <img  id="ioiLogo" src="./webpage/asset/ioi_logo.png">
+  <div id="poll-exists" class="min-vh-100">
+    <div class="d-flex flex-column min-vh-100">
+      <div>
+        <div class="row justify-content-center pt-4 pb-5" id="header">
+          <div class="col-12 col-lg-3 align-middle d-flex justify-content-center float-none float-lg-start">
+            <img id="ioiLogo" src="./webpage/asset/ioi_logo.png">
+          </div>
+          <h2 class="col-12 col-lg-5 text-break px-1 py-3 my-auto text-center align-middle h-100" id="question">No poll is
+            currently active.</h2>
+          <div class="col-12 col-lg-3 text-center d-block float-lg-end">
+            <small class="text-uppercase fw-light text-muted">Poll info:</small>
+            <span class="d-block">Anonymous: <span id="anonymous">Yes</span></span>
+            <span class="d-block">Multiple choice: <span id="multiple-choice">Yes</span></span>
+            <span class="d-block">Status: <span id="status" class="text-success">Active</span></span>
+          </div>
+        </div>
+        <div class="fluid-container">
+          <div class="row" id="result">
+            <!-- Autoamtically filled -->
+          </div>
+        </div>
       </div>
-      <h2 class="col-12 col-lg-5 text-break px-1 py-3 my-auto text-center align-middle h-100" id="question">No poll is
-        currently active.</h2>
-      <div class="col-12 col-lg-3 text-center d-block float-lg-end">
-        <small class="text-uppercase fw-light text-muted">Poll info:</small>
-        <span class="d-block">Anonymous: <span id="anonymous">Yes</span></span>
-        <span class="d-block">Multiple choice: <span id="multiple-choice">Yes</span></span>
-        <span class="d-block">Status: <span id="status" class="text-success">Active</span></span>
-      </div>
-    </div>
-    <div class="fluid-container">
-      <div class="row" id="result">
-       <!-- Autoamtically filled -->
-      </div>
-    </div>
-    <footer class="p-3 mx-auto">
-      <div class="w-100 d-inline-block position-relative" style="height: 300px">
+      <div class="my-auto">
+        <footer class="px-4 mx-auto">
+          <div class="w-100 d-inline-block position-relative" style="height: 300px;">
             <canvas id="aggregate"></canvas>
+          </div>
+        </footer>
+
       </div>
-    </footer>
+    </div>
   </div>
   <div id="no-poll">
     <div class="my-auto align-middle p-5 w-100" style="height: 200px;">
@@ -56,7 +63,7 @@
     <div class="my-auto align-middle p-5 w-100">
       <h2 class="text-center">No poll is currently active.</h2>
     </div>
-    </div>
   </div>
-  
+  </div>
+
 </html>
