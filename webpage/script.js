@@ -17,42 +17,50 @@ function check() {
   }
 }
 
+var setup = (function() {
+  var executed = false;
+  return function() {
+    if (executed) { return }
+    executed = true;
 
-function setup() {
-  let ctx = document.getElementById('aggregate');
-  chart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: Object.entries(choices).map(arr => arr[1]).map(c => `${c.marker}/${c.choice}`),
-      datasets: [{
-        data: Object.entries(choices).map(arr => arr[1]).map(c => c.count),
-        borderWidth: 1
-      }]
-    },
-    options: {
-      scales: {
-        y: {
-          beginAtZero: true
-        }
+    console.log("Setting up chart...", Object.entries(choices).map(arr => arr[1]).map(c => c.count))
+    let ctx = document.getElementById('aggregate');
+    
+    chart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: Object.entries(choices).map(arr => arr[1]).map(c => `${c.marker}/${c.choice}`),
+        datasets: [{
+          data: Object.entries(choices).map(arr => arr[1]).map(c => c.count),
+          borderWidth: 1
+        }]
       },
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          display: false
+      options: {
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        },
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          }
         }
       }
-    }
-  });
-}
+    });
+  };
+})();
 
-function updateChart() {
+function updateChart(status) {
   if (chart == null) {
     return;
   }
 
-  chart.data.datasets[0].data = Object.entries(choices).map(arr => arr[1]).map(c => c.count);
-  chart.labels = Object.entries(choices).map(arr => arr[1]).map(c => `${c.marker}/${c.choice}`);
+  console.log("Updating chart...", Object.entries(choices).map(arr => arr[1]).map(c => c.count))
+  chart.data.datasets[0].data = Object.entries(choices).map(arr => arr[1]).map(c => +c.count);
+  chart.config.data.labels = Object.entries(choices).map(arr => arr[1]).map(c => `${c.marker}/${c.choice}`);
   chart.update();
 
 }
@@ -81,13 +89,23 @@ function fetchPollResult() {
           )
         )
       } else {
-        choices = Object.fromEntries(
-          [...data.choices.map(
-            e => [e.choice_id, {choice: e.choice, marker: e.marker, count: 0}]
-            ),
-            [null, {choice: "Pending", marker: "⏳", count: 0}]
-          ]
-        )
+        if(status == 1) {
+          choices = Object.fromEntries(
+            [...data.choices.map(
+              e => [e.choice_id, {choice: e.choice, marker: e.marker, count: 0}]
+              ),
+              [null, {choice: "Pending", marker: "⏳", count: 0}]
+            ]
+          )
+        } else {
+          choices = Object.fromEntries(
+            [...data.choices.map(
+              e => [e.choice_id, {choice: e.choice, marker: e.marker, count: 0}]
+              ),
+              [null, {choice: "Pending", marker: "", count: 0}]
+            ]
+          )
+        }
       }
 
 
@@ -100,14 +118,12 @@ function fetchPollResult() {
         ungrouped_votes.forEach(vote => {
           choices[vote.choice_id].count += vote.count;
         });
-        updateChart();
 
         $('#result').html('');
       } else {
         ungrouped_votes.forEach(vote => {
           choices[vote.choice_id].count += 1;
         });
-        updateChart();
 
         const votes = groupBy(ungrouped_votes, 'team_code');
         $('#result').html(DOMPurify.sanitize(
@@ -127,12 +143,23 @@ function fetchPollResult() {
       $('#poll-exists').show();
       $('#no-poll').hide();
 
+      if (!anonymous && status != 1) {
+        delete choices.null;
+      }
+
+      console.log("Is anonym: ", anonymous)
+      console.log("Is active: ", status == 1)
+      updateChart(status);
+
       return data;
     };
+    
+    get_data();
+    console.log("fetch chart...", Object.entries(choices).map(arr => arr[1]).map(c => c.count))
 
-    const data = get_data();
+    setup()
     setTimeout(function () {
-      fetchPollResult(data);
+      fetchPollResult();
     }, 3000); 
   });
 }
