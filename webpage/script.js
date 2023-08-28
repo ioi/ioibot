@@ -23,7 +23,6 @@ var setup = (function() {
     if (executed) { return }
     executed = true;
 
-    console.log("Setting up chart...", Object.entries(choices).map(arr => arr[1]).map(c => c.count))
     let ctx = document.getElementById('aggregate');
     
     chart = new Chart(ctx, {
@@ -58,7 +57,6 @@ function updateChart(status) {
     return;
   }
 
-  console.log("Updating chart...", Object.entries(choices).map(arr => arr[1]).map(c => c.count))
   chart.data.datasets[0].data = Object.entries(choices).map(arr => arr[1]).map(c => +c.count);
   chart.config.data.labels = Object.entries(choices).map(arr => arr[1]).map(c => `${c.marker}/${c.choice}`);
   chart.update();
@@ -147,15 +145,12 @@ function fetchPollResult() {
         delete choices.null;
       }
 
-      console.log("Is anonym: ", anonymous)
-      console.log("Is active: ", status == 1)
       updateChart(status);
 
       return data;
     };
     
     get_data();
-    console.log("fetch chart...", Object.entries(choices).map(arr => arr[1]).map(c => c.count))
 
     setup()
     setTimeout(function () {
