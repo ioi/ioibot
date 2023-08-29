@@ -24,7 +24,7 @@ var setup = (function() {
     executed = true;
 
     let ctx = document.getElementById('aggregate');
-    
+    Chart.defaults.color = '#FFF';
     chart = new Chart(ctx, {
       type: 'bar',
       data: {
@@ -38,6 +38,13 @@ var setup = (function() {
         scales: {
           y: {
             beginAtZero: true
+          },
+          x: {
+            ticks: {
+              font: {
+                size: 20
+              }
+            }
           }
         },
         responsive: true,
