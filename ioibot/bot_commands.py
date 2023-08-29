@@ -1025,14 +1025,13 @@ class Command:
             )
 
     async def _objection(self):
-
         if not self.args:
             text = (
                 "Usage:  \n\n"
                 "- `!c objection <Optional: Major/Minor> <content>`: Send objection to the SC.  \n\n"
                 "Examples:  \n"
-                "- `!c objection Major It's unclear whether the ranges are inclusive or exclusive!`: Send Major objection to the SC.  \n"
-                "- `!c objection The name is misspelled in the provided output`: Send (default) Minor objection to the SC.  \n"
+                "- `!c objection Major We had a very similar problem in our practice contest!`: Send Major objection to the SC.  \n"
+                "- `!c objection It is not specified for the intervalls whether it is open or closed`: Send (default) Minor objection to the SC.  \n"
             )
             await send_text_to_room(self.client, self.room.room_id, text)
             return
