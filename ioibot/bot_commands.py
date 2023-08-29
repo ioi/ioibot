@@ -1031,7 +1031,7 @@ class Command:
                 "- `!c objection <Optional: Major/Minor> <content>`: Send objection to the SC.  \n\n"
                 "Examples:  \n"
                 "- `!c objection Major We had a very similar problem in our practice contest!`: Send Major objection to the SC.  \n"
-                "- `!c objection It is not specified for the intervalls whether it is open or closed`: Send (default) Minor objection to the SC.  \n"
+                "- `!c objection It is not specified for the intervals whether they are open or closed`: Send (default) Minor objection to the SC.  \n"
             )
             await send_text_to_room(self.client, self.room.room_id, text)
             return
