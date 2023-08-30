@@ -21,6 +21,7 @@ var setup = (function() {
   var executed = false;
   return function() {
     if (executed) { return }
+    if (choices == null) { return }
     executed = true;
 
     let ctx = document.getElementById('aggregate');
@@ -157,8 +158,6 @@ function fetchPollResult() {
       return data;
     };
     
-    get_data();
-
     setup()
     setTimeout(function () {
       fetchPollResult();
