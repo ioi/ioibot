@@ -75,11 +75,7 @@ function fetchPollResult() {
   $.get("/polls/display", function(json_data) {
 
     const get_data = function() {
-      if ($.isEmptyObject(json_data)) {
-        $('#poll-exists').hide();
-        $('#no-poll').show();
-        return {};
-      }
+      if ($.isEmptyObject(json_data)) { return false; }
 
       const data = json_data;
       const question = data.question;
@@ -133,21 +129,16 @@ function fetchPollResult() {
 
         const votes = groupBy(ungrouped_votes, 'team_code');
         $('#result').html(DOMPurify.sanitize(
-          Object.entries(votes).map(([team_code, votes_by_team]) => {
-            return (` 
-                <div class="col-12 col-sm-6 col-md-4 col-lg-3 col-xl-2 text-nowrap text-truncate">
-                ${
-                  votes_by_team.map(vote => `<span title="${vote.voted_at ?? "pending"} / ${vote.voted_by ?? "pending"}">${choices[vote.choice_id].marker}</span>`).join('')
-                } 
-                  &emsp; <span title="${team_code}">${team_code}</span>
-                </div>
-              `);
-            }).join('')
+          Object.entries(votes).map(([team_code, votes_by_team]) => (` 
+                    <div class="col-12 col-sm-6 col-md-4 col-lg-3 col-xl-2 text-nowrap text-truncate">
+                    ${
+                      votes_by_team.map(vote => `<span title="${vote.voted_at ?? "pending"} / ${vote.voted_by ?? "pending"}">${choices[vote.choice_id].marker}</span>`).join('')
+                    } 
+                      &emsp; <span title="${team_code}">${team_code}</span>
+                    </div>
+                  `)).join('')
         ))
       }
-
-      $('#poll-exists').show();
-      $('#no-poll').hide();
 
       if (!anonymous && status != 1) {
         delete choices.null;
@@ -155,10 +146,20 @@ function fetchPollResult() {
 
       updateChart(status);
 
-      return data;
+      return true;
     };
     
-    setup()
+    const success = get_data();
+
+    if (success) {
+      $('#poll-exists').show();
+      $('#no-poll').hide();
+      setup()
+    } else {
+      $('#poll-exists').hide();
+      $('#no-poll').show();
+    }
+
     setTimeout(function () {
       fetchPollResult();
     }, 3000); 
