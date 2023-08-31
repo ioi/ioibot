@@ -74,7 +74,7 @@ class Message:
 
 
         if len(db_response) == 0 or type(await self.client.room_get_event(sc_room_id, db_response[0][0])) is RoomGetEventError:
-            await react_to_event(self.client, self.room.room_id, self.event.event_id, "❌ failed")
+            # await react_to_event(self.client, self.room.room_id, self.event.event_id, "❌ failed")
             return  
 
         sc_thread = db_response[0][0];
