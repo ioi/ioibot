@@ -128,8 +128,11 @@ function fetchPollResult() {
         });
 
         const votes = groupBy(ungrouped_votes, 'team_code');
+        // sort by team code
+        const sorted_votes = Object.entries(votes).sort((a, b) => a[0].localeCompare(b[0]));
+
         $('#result').html(DOMPurify.sanitize(
-          Object.entries(votes).map(([team_code, votes_by_team]) => (` 
+          sorted_votes.map(([team_code, votes_by_team]) => (` 
                     <div class="col-12 col-sm-6 col-md-4 col-lg-3 col-xl-2 text-nowrap text-truncate">
                     ${
                       votes_by_team.map(vote => `<span title="${vote.voted_at ?? "pending"} / ${vote.voted_by ?? "pending"}">${choices[vote.choice_id].marker}</span>`).join('')
