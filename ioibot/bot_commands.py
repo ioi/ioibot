@@ -134,7 +134,7 @@ class Command:
             await self._manage_poll()
 
         elif self.command.startswith("vote"):
-            if not self.user.is_leader():
+            if not self.user.is_leader() or self.user.is_tc():
                 await send_text_to_room(
                     self.client, self.room.room_id,
                     "Only Team Leader and Deputy Leader can use this command."
@@ -780,6 +780,7 @@ class Command:
             await send_text_to_room(self.client, self.room.room_id, "Unknown command. Send `poll` to see all available commands.  \n")
 
     async def _vote(self):
+        
         cursor = self.store.vconn.cursor()
 
         cursor.execute('SELECT poll_id, question, anonymous, multiple_choice FROM polls WHERE status = 1')
