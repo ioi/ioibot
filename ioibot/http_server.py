@@ -41,7 +41,7 @@ async def basic_auth_middleware(app, handler):
                     password = password.strip()
                     password = bytes(password, "utf-8")
                     if username == uname and bcrypt.hashpw(password, passw_hash) == passw_hash:
-                        logger.info(f"[NEW] Authentication successful for {request.remote}")
+                        logger.info(f"Authentication successful for {request.remote}")
                        
                         session["authenticated"] = True
                         return await handler(request)
