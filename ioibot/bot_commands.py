@@ -124,6 +124,12 @@ class Command:
             await self._show_info()
 
         elif self.command.startswith("refresh"):
+            if not self.user.is_tc():
+              await send_text_to_room(
+                  self.client, self.room.room_id,
+                  "Only HTC can use this command."
+              )
+              return
             await self._refresh()
 
         elif self.command.startswith("poll"):
