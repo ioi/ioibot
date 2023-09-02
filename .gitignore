@@ -22,3 +22,6 @@ dist/
 # Mounted Docker volume for configuration
 data/**
 !data/config.default.yaml
+
+# credentials
+ioibot/.env

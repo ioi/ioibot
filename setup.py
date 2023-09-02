@@ -34,7 +34,11 @@ setup(
         "matrix-nio[e2e]>=0.16.0",
         "Markdown>=3.1.1",
         "PyYAML>=5.1.2",
+        "aiohttp_security>=0.4.0",
+        "aiohttp-session>=2.12.0",
         "dropbox>=11.36.2",
+        "python-dotenv>=1.0.0",
+        "bcrypt>=4.0.1",
     ],
     extras_require={
         "postgres": ["psycopg2>=2.8.5"],
