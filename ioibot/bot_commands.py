@@ -123,6 +123,9 @@ class Command:
         elif self.command.startswith("info"):
             await self._show_info()
 
+        elif self.command.startswith("refresh"):
+            await self._refresh()
+
         elif self.command.startswith("poll"):
             if not self.user.is_tc():
                 await send_text_to_room(
@@ -919,6 +922,10 @@ class Command:
             )
 
             await send_text_to_room(self.client, self.room.room_id, text)
+
+    async def _refresh(self):
+        self.store.reload_leaders()
+        await send_text_to_room(self.client, self.room.room_id, "Successfully refreshed!")
 
     async def invite(self):
         """Invite all accounts with role to room"""

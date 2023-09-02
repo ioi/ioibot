@@ -78,6 +78,9 @@ class Storage:
 
         logger.info(f"Database initialization of type '{self.db_type}' complete")
 
+    def reload_leaders(self):
+        self.leaders = pd.read_csv(self.config.leader_url)
+
     def _get_database_connection(
         self, database_type: str, connection_string: str
     ) -> Any:
