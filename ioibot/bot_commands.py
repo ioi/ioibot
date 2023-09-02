@@ -134,14 +134,30 @@ class Command:
             await self._manage_poll()
 
         elif self.command.startswith("vote"):
-            if not self.user.is_leader() or self.user.is_tc():
+            if not self.user.is_leader():
                 await send_text_to_room(
                     self.client, self.room.room_id,
                     "Only Team Leader and Deputy Leader can use this command."
                 )
                 return
 
-            team = self.store.teams.loc[self.store.teams['Code'] == self.user.team]
+            if self.user.is_tc():
+              if len(self.args) == 0:
+                await send_text_to_room(
+                    self.client, self.room.room_id,
+                    "Usage: `vote <3-letter-country-code> <choices>`"
+                )
+                return
+              if await self._validate(len(self.args) > 0, "Usage: `vote <3-letter-country-code> <choices>`"): return;  
+              team_code = self.args[0].upper()
+              # if team code to upper does not exists
+              if await self._validate(not self.store.teams.loc[self.store.teams['Code'] == team_code].empty, f"Team {team_code} not found."): return;
+
+              self.args = self.args[1:]
+            else:
+              team_code = self.user.team
+                
+            team = self.store.teams.loc[self.store.teams['Code'] == team_code]
             if not team.empty and team.iloc[0]['Voting'] == 0:
                 await send_text_to_room(
                     self.client, self.room.room_id,
@@ -149,6 +165,7 @@ class Command:
                 )
                 return
 
+            self.user.team = team_code
             await self._vote()
 
         elif self.command.startswith("invite"):
