@@ -840,10 +840,21 @@ class Command:
                 text += "Vote by sending: `vote <number>`  \n"
                 text += "Example: `vote 1`  \n"
             text += "You can amend your vote by resending your vote.  \n"
+            text += "You can delete your vote by sending `vote delete`.  \n"
 
             await send_text_to_room(self.client, self.room.room_id, text)
             return
 
+        if len(self.args) == 1:
+            if self.args[0].lower() == 'delete':
+                if anonymous:
+                    cursor.execute('DELETE FROM poll_anonym_active_votes WHERE team_code = ?', [self.user.team])
+                else:
+                    cursor.execute('DELETE FROM poll_votes WHERE poll_id = ? AND team_code = ?', [poll_id, self.user.team])
+
+                await send_text_to_room(self.client, self.room.room_id, "Your vote has been deleted.")
+                return
+            
         choices = []
         if multiple_choice:
             if await self._validate(all([len(choice) < 4 and choice.isdigit() for choice in self.args]), "Invalid vote: Every vote must be an integer."): return;
