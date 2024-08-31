@@ -262,7 +262,7 @@ class Command:
         """Show the help text"""
 
         text = ""
-        text += "Hello, I am IOI 2023 bot. I understand several commands:  \n\n"
+        text += "Hello, I am IOI 2024 bot. I understand several commands:  \n\n"
         text += "- `info`: shows various team information\n"
         text += "- `accounts`: shows various accounts for your team\n"
         text += "- `vote`: casts vote for your team\n"
