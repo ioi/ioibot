@@ -167,25 +167,32 @@ class Callbacks:
 
             event: The encrypted event that we were unable to decrypt.
         """
-        logger.error(
-            f"Failed to decrypt event '{event.event_id}' in room '{room.room_id}'!"
-            f"\n\n"
-            f"Tip: try using a different device ID in your config file and restart."
-            f"\n\n"
-            f"If all else fails, delete your store directory and let the bot recreate "
-            f"it (your reminders will NOT be deleted, but the bot may respond to existing "
-            f"commands a second time)."
-        )
+        # TODO(niklaci): Find a way to avoid decryption errors for past messages when restarting the bot.
+        # The users will get reactions from the bot for even messages of last year, and sometimes
+        # it is topped by some "Unable to decrypt message" messages.
+        # For now, we just silence the reactions, because they are very annoying for users,
+        # and keep the events on a lower log level.
+        logger.info(f"Failed to decrypt event '{event.event_id}' in room '{room.room_id}'.")
 
-        red_x_and_lock_emoji = "❌ 🔐"
+        # logger.error(
+        #     f"Failed to decrypt event '{event.event_id}' in room '{room.room_id}'!"
+        #     f"\n\n"
+        #     f"Tip: try using a different device ID in your config file and restart."
+        #     f"\n\n"
+        #     f"If all else fails, delete your store directory and let the bot recreate "
+        #     f"it (your reminders will NOT be deleted, but the bot may respond to existing "
+        #     f"commands a second time)."
+        # )
 
-        # React to the undecryptable event with some emoji
-        await react_to_event(
-            self.client,
-            room.room_id,
-            event.event_id,
-            red_x_and_lock_emoji,
-        )
+        # red_x_and_lock_emoji = "❌ 🔐"
+
+        # # React to the undecryptable event with some emoji
+        # await react_to_event(
+        #     self.client,
+        #     room.room_id,
+        #     event.event_id,
+        #     red_x_and_lock_emoji,
+        # )
 
     async def unknown(self, room: MatrixRoom, event: UnknownEvent) -> None:
         """Callback for when an event with a type that is unknown to matrix-nio is received.
