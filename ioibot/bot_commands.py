@@ -930,7 +930,7 @@ class Command:
             await send_text_to_room(self.client, self.room.room_id, text)
 
     async def _refresh(self):
-        self.store.reload_leaders()
+        self.store.reload_csv()
         await send_text_to_room(self.client, self.room.room_id, "Successfully refreshed!")
 
     async def invite(self):

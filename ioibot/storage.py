@@ -78,8 +78,11 @@ class Storage:
 
         logger.info(f"Database initialization of type '{self.db_type}' complete")
 
-    def reload_leaders(self):
+    def reload_csv(self):
+        self.teams = pd.read_csv(self.config.team_url)
         self.leaders = pd.read_csv(self.config.leader_url)
+        self.translation_acc = pd.read_csv(self.config.translation_acc_url)
+        self.objection_rooms = pd.read_csv(self.config.objection_room_url)
 
     def _get_database_connection(
         self, database_type: str, connection_string: str
