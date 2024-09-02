@@ -154,7 +154,7 @@ class Command:
               if len(self.args) == 0:
                 await send_text_to_room(
                     self.client, self.room.room_id,
-                    "Usage: `vote <3-letter-country-code> <choices>`"
+                    "Usage: `vote <3-letter-country-code> [choices]`"
                 )
                 return
               if await self._validate(len(self.args) > 0, "Usage: `vote <3-letter-country-code> <choices>`"): return;  
@@ -843,13 +843,13 @@ class Command:
 
             text += "  \n\n"
             if multiple_choice:
-                text += "Vote by sending: `vote <number> <number> ...`  \n"
-                text += "Example: `vote 1 3`  \n"
+                text += "Vote by sending: `vote <3-letter-country-code> <number> <number> ...`  \n"
+                text += "Example: `vote HUN 1 3`  \n"
             else:
-                text += "Vote by sending: `vote <number>`  \n"
-                text += "Example: `vote 1`  \n"
+                text += "Vote by sending: `vote <3-letter-country-code> <number>`  \n"
+                text += "Example: `vote HUN 1`  \n"
             text += "You can amend your vote by resending your vote.  \n"
-            text += "You can delete your vote by sending `vote delete`.  \n"
+            text += "You can delete your vote by sending `vote <3-letter-country-code> delete`.  \n"
 
             await send_text_to_room(self.client, self.room.room_id, text)
             return
