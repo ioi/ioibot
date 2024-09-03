@@ -890,19 +890,6 @@ class Command:
                     [choice, poll_id, self.user.team]
                 )
                 
-            text = self._get_poll_display(
-                poll_id = None, 
-                question = question,
-                status = None, 
-                display = None,
-                anonymous = anonymous,
-                multiple_choice = multiple_choice,
-                poll_choices = poll_choices,
-                user_choices = user_choices,
-            )
-
-            await send_text_to_room(self.client, self.room.room_id, text)
-
         else: # not anonymous
             cursor.execute('DELETE FROM poll_votes WHERE poll_id = ? AND team_code = ?', [poll_id, self.user.team])
 
@@ -916,18 +903,19 @@ class Command:
                     [choice, poll_id, self.user.team, self.user.username]
                 )
             
-            text = self._get_poll_display(
-                poll_id = None, 
-                question = question,
-                status = None, 
-                display= None,
-                anonymous = anonymous,
-                multiple_choice = multiple_choice,
-                poll_choices = poll_choices,
-                user_choices = user_choices,
-            )
+        text = self._get_poll_display(
+            poll_id = None, 
+            question = question,
+            status = None, 
+            display = None,
+            anonymous = anonymous,
+            multiple_choice = multiple_choice,
+            poll_choices = poll_choices,
+            user_choices = user_choices,
+        )
+        text += "\n\nYour vote has been recorded as shown above in bold."
 
-            await send_text_to_room(self.client, self.room.room_id, text)
+        await send_text_to_room(self.client, self.room.room_id, text)
 
     async def _refresh(self):
         self.store.reload_csv()
