@@ -4,7 +4,7 @@ import sqlite3
 def create_database():
     """Creates the databases for the voiting and the objection threads"""
 
-    with sqlite3.connect("/data/ioibot.db") as conn:
+    with sqlite3.connect("ioibot.db") as conn:
         cursor = conn.cursor()
 
         cursor.execute(

@@ -70,9 +70,9 @@ async def create_app():
     setup(app, SimpleCookieStorage(max_age=3600))
     app.middlewares.append(basic_auth_middleware)
     routes = web.RouteTableDef()
-    conn = sqlite3.connect("/data/ioibot.db")
+    conn = sqlite3.connect("ioibot.db")
     cursor = conn.cursor()
-    with open("/data/config.yaml", "r") as file_stream:
+    with open("config.yaml", "r") as file_stream:
         config = yaml.safe_load(file_stream)
     teams_all = pd.read_csv(config["datasource"]["team_url"])
     teams = teams_all[teams_all['Voting'] == 1]

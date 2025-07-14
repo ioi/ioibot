@@ -34,7 +34,7 @@ class Storage:
             database_config["type"], database_config["connection_string"]
         )
         self.vconn = self._get_database_connection(
-            database_config["type"], "/data/ioibot.db"
+            database_config["type"], "ioibot.db"
         )
 
         self.cursor = self.conn.cursor()
