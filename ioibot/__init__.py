@@ -1,3 +1,5 @@
+'''IOI Bot'''
+
 import sys
 
 # Check that we're not running on an unsupported Python version.

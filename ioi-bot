@@ -1,17 +1,3 @@
-#!/usr/bin/env python3
-import asyncio
+#!/bin/sh
 
-try:
-    from ioibot.create_database import create_database
-    from ioibot import http_server
-    from ioibot import main
-
-    # Create ioibot.db used in the bot and http server
-    create_database()
-
-    # Run http server and main function of the bot
-    task = asyncio.gather(http_server.main(), main.main())
-    asyncio.get_event_loop().run_until_complete(task)
-
-except ImportError as e:
-    print("Unable to import library:", e)
+exec ./ioibot/entry.py

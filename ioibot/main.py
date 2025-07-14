@@ -1,10 +1,12 @@
-#!/usr/bin/env python3
-import asyncio
 import logging
 import sys
 from time import sleep
 
 from aiohttp import ClientConnectionError, ServerDisconnectedError
+
+from ioibot.callbacks import Callbacks
+from ioibot.config import Config
+from ioibot.storage import Storage
 from nio import (
     AsyncClient,
     AsyncClientConfig,
@@ -15,10 +17,6 @@ from nio import (
     RoomMessageText,
     UnknownEvent,
 )
-
-from ioibot.callbacks import Callbacks
-from ioibot.config import Config
-from ioibot.storage import Storage
 
 logger = logging.getLogger(__name__)
 
