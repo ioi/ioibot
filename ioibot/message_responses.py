@@ -1,10 +1,9 @@
 import logging
 
-from nio import AsyncClient, MatrixRoom, RoomMessageText
-
-from ioibot.chat_functions import send_text_to_room, react_to_event, send_text_to_thread
+from ioibot.chat_functions import react_to_event, send_text_to_thread
 from ioibot.config import Config
 from ioibot.storage import Storage
+from nio import AsyncClient, MatrixRoom, RoomMessageText
 from nio.responses import RoomGetEventError
 
 
@@ -61,21 +60,20 @@ class Message:
 
         obj_thread_id = self.event.source['content']['m.relates_to']['event_id']
 
-        cursor = self.store.vconn.cursor()
-        db_response = cursor.execute('''
-            SELECT 
+        db_response = await self.store.conn.fetch('''
+            SELECT
                 sc_thread_id
             FROM
                 listening_threads
-            WHERE obj_room_id = ? 
-                AND sc_room_id = ?
-                AND obj_thread_id = ?
-        ''', [self.room.room_id, sc_room_id, obj_thread_id]).fetchall()
+            WHERE obj_room_id = $1
+                AND sc_room_id = $2
+                AND obj_thread_id = $3
+        ''', self.room.room_id, sc_room_id, obj_thread_id)
 
 
         if len(db_response) == 0 or type(await self.client.room_get_event(sc_room_id, db_response[0][0])) is RoomGetEventError:
             # await react_to_event(self.client, self.room.room_id, self.event.event_id, "❌ failed")
-            return  
+            return
 
         sc_thread = db_response[0][0];
         objection_comment = (

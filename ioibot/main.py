@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+
+import asyncio
 import logging
 import sys
 from time import sleep
@@ -16,12 +19,12 @@ from nio import (
 
 from ioibot.callbacks import Callbacks
 from ioibot.config import Config
+from ioibot.http_server import run_webapp
 from ioibot.storage import Storage
 
 logger = logging.getLogger(__name__)
 
-
-async def main():
+async def async_main():
     """The first function that is run when starting the bot"""
 
     # Read user-configured options from a config file.
@@ -67,6 +70,12 @@ async def main():
     client.add_event_callback(callbacks.decryption_failure, (MegolmEvent,))
     client.add_event_callback(callbacks.unknown, (UnknownEvent,))
 
+    async with store.db_connect():
+        await asyncio.gather(
+                loop(config, client),
+                run_webapp(config, store.conn))
+
+async def loop(config, client):
     # Keep trying to reconnect on failure (with some time in-between)
     while True:
         try:
@@ -113,3 +122,6 @@ async def main():
         finally:
             # Make sure to close the client connection on disconnect
             await client.close()
+
+def main():
+    asyncio.run(async_main())

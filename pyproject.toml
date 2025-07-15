@@ -8,26 +8,16 @@ authors = []
 readme = "README.md"
 dynamic = ["version", "description"]
 dependencies = [
-		"pandas >= 2.2.3",
     "Markdown >= 3.1.1",
     "PyYAML >= 5.1.2",
-    "aiohttp-session >= 2.12.0",
     "aiohttp >= 3.12.13",
+    "aiohttp-session >= 2.12.0",
+    "asyncpg >= 0.30.0",
     "bcrypt >= 4.0.1",
     "matrix-nio[e2e] >= 0.16.0",
+    "pandas >= 2.2.3",
     "python-dotenv >= 1.0.0",
 ]
 
-[project.optional-dependencies]
-postgres = [
-    "psycopg2 >= 2.8.5",
-]
-dev = [
-    "black == 19.10b0",
-    "flake8 == 3.8.3",
-    "flake8-comprehensions == 3.2.3",
-    "isort == 5.0.4",
-]
-
 [project.scripts]
-ioibot = "ioibot.entry:main"
+ioibot = "ioibot.main:main"

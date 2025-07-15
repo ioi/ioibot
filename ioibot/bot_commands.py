@@ -1,7 +1,6 @@
+from itertools import repeat
 import logging
 import shlex
-
-from nio import AsyncClient, MatrixRoom, RoomMessageText
 
 from ioibot.chat_functions import (
     make_pill,
@@ -11,6 +10,7 @@ from ioibot.chat_functions import (
 )
 from ioibot.config import Config
 from ioibot.storage import Storage
+from nio import AsyncClient, MatrixRoom, RoomMessageText
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -98,6 +98,9 @@ class Command:
         self.room = room
         self.event = event
         self.args = self.command.split()[1:]
+
+    async def send_text(self, message: str):
+        await send_text_to_room(self.client, self.room.room_id, message)
 
     async def process(self):
         user = User(self.store, self.config, self.event.sender)
@@ -370,8 +373,6 @@ class Command:
                 '- `poll activate 10`: opens poll 10 for voting  \n'
     ))
     async def _manage_poll(self):
-        cursor = self.store.vconn.cursor()
-
         def _get_options(args):
             ANONYM  = int(0b0001)
             MULTIPLE= int(0b0010)
@@ -431,27 +432,21 @@ class Command:
 
             status = 0
             if start:
-                cursor.execute('SELECT poll_id FROM polls WHERE status = 1')
-                active_exist = cursor.fetchone()
-                status = 1 if not active_exist else 0
+                poll_id = await self.store.conn.fetchval('SELECT poll_id FROM polls WHERE status = 1')
+                status = 1 if poll_id is None else 0
 
             if display:
-                cursor.execute('UPDATE polls SET display = 0')
+                await self.store.conn.execute('UPDATE polls SET display = 0')
 
-            cursor.execute(
+            poll_id = await self.store.conn.fetchval(
                 '''INSERT INTO polls (question, status, display, anonymous, multiple_choice)
-                VALUES (?, ?, ?, ?, ?)''',
-                [question, status, display, anonymous, multiple_choice]
+                VALUES ($1, $2, $3, $4, $5) RETURNING poll_id''',
+                question, status, display, anonymous, multiple_choice
             )
 
-            poll_id = cursor.lastrowid
-
-            for choice, marker in zip(choices, markers):
-                cursor.execute(
-                    '''INSERT INTO poll_choices (poll_id, choice, marker)
-                    VALUES (?, ?, ?)''',
-                    [poll_id, choice, marker]
-                )
+            await self.store.conn.executemany(
+                '''INSERT INTO poll_choices (poll_id, choice, marker)
+                VALUES ($1, $2, $3)''', zip(repeat(poll_id), choices, markers))
 
             text = self._get_poll_display(
                 poll_id = poll_id,
@@ -464,7 +459,6 @@ class Command:
                 user_choices = None,
             )
 
-
             if start == 1 and status == 0:
                 text += '\n\n'
                 text += f'Poll {poll_id} is **inactive**, beacause another poll is still active.  \n'
@@ -476,10 +470,10 @@ class Command:
             await send_text_to_room(self.client, self.room.room_id, text)
 
         async def _update(poll_id, args):
-            cursor.execute('SELECT question, status FROM polls WHERE poll_id = ?', [poll_id])
-            poll_exists = cursor.fetchone()
-            if await self._validate(poll_exists, f"Poll {poll_id} does not exist.  \n\nSend `poll list` to see all created polls.  \n"): return;
-            (question_db, status) = poll_exists
+            row = await self.store.conn.fetchrow('SELECT question, status FROM polls WHERE poll_id = $1', poll_id)
+            if row is None:
+                return await self.send_text(f"Poll {poll_id} does not exist.  \n\nSend `poll list` to see all created polls.  \n")
+            (question_db, status) = row
 
             input_poll = ' '.join(args)
 
@@ -493,7 +487,7 @@ class Command:
               return
 
             if anonymous == 0 and multiple_choice == 0 and start == 0 and len(arguments) == 0 and display == 1: # only the display is changed
-                cursor.execute('UPDATE polls SET display = CASE WHEN poll_id = ? THEN 1 ELSE 0 END', [poll_id])
+                await self.store.conn.execute('UPDATE polls SET display = CASE WHEN poll_id = $1 THEN 1 ELSE 0 END', poll_id)
                 await send_text_to_room(self.client, self.room.room_id, f'Poll {poll_id} is now displayed.  \n')
                 return
 
@@ -501,18 +495,17 @@ class Command:
 
             if len(arguments) <= 1: # only update the question
                 if display:
-                    cursor.execute('UPDATE polls SET display = 0')
+                    await self.store.conn.execute('UPDATE polls SET display = 0', poll_id)
 
                 question = arguments[0] if len(arguments) == 1 else question_db
 
-                cursor.execute(
-                    '''UPDATE polls SET question = ?, display = ?, anonymous = ?, multiple_choice = ? WHERE poll_id = ?''',
-                    [question, anonymous, display, multiple_choice, poll_id]
-                )
+                await self.store.conn.execute(
+                    'UPDATE polls SET question = $1, display = $2, anonymous = $3, multiple_choice = $4 WHERE poll_id = $5',
+                    question, anonymous, display, multiple_choice, poll_id)
 
                 # get poll choices
-                cursor.execute('SELECT poll_choice_id, choice, marker FROM poll_choices WHERE poll_id = ?', [poll_id])
-                poll_choices = cursor.fetchall()
+                poll_choices = await self.store.conn.fetch(
+                        'SELECT poll_choice_id, choice, marker FROM poll_choices WHERE poll_id = $1', poll_id)
                 if await self._validate(poll_choices, f"Internal server error while updating a poll.  \n"): return;
 
                 text = self._get_poll_display(
@@ -561,21 +554,16 @@ class Command:
 
 
             if display:
-                    cursor.execute('UPDATE polls SET display = 0')
+                await self.store.conn.execute('UPDATE polls SET display = 0')
 
-            cursor.execute(
-                '''UPDATE polls SET question = ?, display = ?, anonymous = ?, multiple_choice = ? WHERE poll_id = ?''',
-                [question, anonymous, display, multiple_choice, poll_id]
-            )
+            await self.store.conn.execute(
+                'UPDATE polls SET question = $1, display = $2, anonymous = $3, multiple_choice = $4 WHERE poll_id = $5',
+                question, anonymous, display, multiple_choice, poll_id)
 
-            cursor.execute('DELETE FROM poll_choices WHERE poll_id = ?', [poll_id])
-            for choice, marker in zip(choices, markers):
-                cursor.execute(
-                    '''INSERT INTO poll_choices (poll_id, choice, marker)
-                    VALUES (?, ?, ?)''',
-                    [poll_id, choice, marker]
-                )
-
+            await self.store.conn.execute('DELETE FROM poll_choices WHERE poll_id = $1', poll_id)
+            await self.store.conn.executemany(
+                '''INSERT INTO poll_choices (poll_id, choice, marker)
+                VALUES ($1, $2, $3)''', zip(repeat(poll_id), choices, markers))
 
             text = self._get_poll_display(
                 poll_id = poll_id,
@@ -599,13 +587,13 @@ class Command:
             await send_text_to_room(self.client, self.room.room_id, text)
 
         async def _list():
-            cursor.execute('SELECT poll_id, question, status, display, anonymous, multiple_choice FROM polls')
-            poll_list = cursor.fetchall()
+            poll_list = await self.store.conn.fetch(
+                    'SELECT poll_id, question, status, display, anonymous, multiple_choice FROM polls')
 
             if await self._validate(poll_list, "No polls have been created."): return;
 
-            cursor.execute('SELECT poll_id, choice, marker FROM poll_choices')
-            poll_choices_ungrouped = cursor.fetchall()
+            poll_choices_ungrouped = await self.store.conn.fetch(
+                'SELECT poll_id, choice, marker FROM poll_choices')
 
             text = '## Created polls'
             poll_choices = dict()
@@ -629,14 +617,14 @@ class Command:
 
         async def _activate(poll_id = None):
             if poll_id is None:
-                cursor.execute('SELECT poll_id, question, status, display, anonymous, multiple_choice FROM polls WHERE status = 1')
-                poll_details = cursor.fetchone()
-
-                if await self._validate(poll_details, "There is no active poll."): return;
+                poll_details = await self.store.conn.fetchrow(
+                    'SELECT poll_id, question, status, display, anonymous, multiple_choice FROM polls WHERE status = 1')
+                if poll_details is None:
+                    return await self.send_text("There is no active poll.")
 
                 poll_id, question, status, display, anonymous, multiple_choice = poll_details
-                cursor.execute('SELECT poll_choice_id, choice, marker FROM poll_choices WHERE poll_id = ?', [poll_id])
-                poll_choices = cursor.fetchall()
+                poll_choices = await self.store.conn.fetch(
+                    'SELECT poll_choice_id, choice, marker FROM poll_choices WHERE poll_id = $1', poll_id)
                 if await self._validate(poll_choices, "Internal server error: There are no choices for this poll!"): return;
 
                 text = self._get_poll_display(
@@ -653,27 +641,27 @@ class Command:
                 await send_text_to_room(self.client, self.room.room_id, text)
                 return
 
-            cursor.execute('SELECT status FROM polls WHERE poll_id = ?', [poll_id])
-            id_exist = cursor.fetchall()
-            if await self._validate(id_exist, f"Poll {poll_id} does not exist.  \n\nSend `poll list` to see all created polls.  \n"): return;
-            (status,) = id_exist[0]
+            status = await self.store.conn.fetchval(
+                'SELECT status FROM polls WHERE poll_id = $1', poll_id)
+            if status is None:
+                return await self.send_text(f"Poll {poll_id} does not exist.  \n\nSend `poll list` to see all created polls.  \n")
             if await self._validate(status == 0, f"Poll {poll_id} is {['inactive', 'active', 'closed'][status]}, it cannot be activated  \n"): return;
 
-            cursor.execute('SELECT poll_id FROM polls WHERE status = 1')
-            active_exist = cursor.fetchall()
-            if await self._validate(not active_exist, f"Poll {active_exist[0][0] if active_exist else 'None'} is already active. Only one poll can be active at any time.  \n"): return;
+            active_id = await self.store.conn.fetchval(
+                'SELECT poll_id FROM polls WHERE status = 1')
+            if active_id is not None:
+                return await self.send_text(f"Poll {active_id} is already active. Only one poll can be active at any time.  \n")
 
-            cursor.execute('UPDATE polls SET status = 1 WHERE poll_id = ?', [poll_id])
-            cursor.execute('SELECT question, status, display, anonymous, multiple_choice FROM polls WHERE poll_id = ?',[poll_id])
-
-
-            poll_details = cursor.fetchone()
-            if await self._validate(poll_details, f"Poll {poll_id} does not exist.  \n\nSend `poll list` to see all created polls.  \n"): return;
+            await self.store.conn.execute('UPDATE polls SET status = 1 WHERE poll_id = $1', poll_id)
+            poll_details = await self.store.conn.fetchrow(
+                'SELECT question, status, display, anonymous, multiple_choice FROM polls WHERE poll_id = $1', poll_id)
+            if poll_details is None:
+                return await self.send_text(f"Poll {poll_id} does not exist.  \n\nSend `poll list` to see all created polls.  \n")
 
             question, status, display, anonymous, multiple_choice = poll_details
 
-            cursor.execute('SELECT poll_choice_id, choice, marker FROM poll_choices WHERE poll_id = ?', [poll_id])
-            poll_choices = cursor.fetchall()
+            poll_choices = await self.store.conn.fetch(
+                'SELECT poll_choice_id, choice, marker FROM poll_choices WHERE poll_id = $1', poll_id)
 
             text = self._get_poll_display(
                 poll_id = poll_id,
@@ -689,33 +677,34 @@ class Command:
             await send_text_to_room(self.client, self.room.room_id, text)
 
         async def _close():
-            cursor.execute('SELECT poll_id, anonymous, multiple_choice FROM polls WHERE status = 1')
-            active_exist = cursor.fetchall()
-            if await self._validate(active_exist, "There is no active poll."): return;
-
-            poll_id, anonymous, multiple_choice = active_exist[0]
+            active = await self.store.conn.fetchrow(
+                'SELECT poll_id, anonymous FROM polls WHERE status = 1')
+            if active is None:
+                return await self.send_text("There is no active poll.")
+            poll_id, anonymous = active
 
             if anonymous:
-                cursor.execute('SELECT poll_choice_id FROM poll_choices WHERE poll_id = ?', [poll_id])
-                poll_choices = cursor.fetchall()
+                poll_choices = await self.store.conn.fetch(
+                    'SELECT poll_choice_id FROM poll_choices WHERE poll_id = $1', poll_id)
 
                 results = dict()
                 for (poll_choice_id,) in poll_choices:
                     results[poll_choice_id] = 0
 
-                cursor.execute('SELECT poll_choice_id FROM poll_anonym_active_votes')
-                votes = cursor.fetchall()
+                votes = await self.store.conn.fetch(
+                    'SELECT poll_choice_id FROM poll_anonym_active_votes')
                 for (vote,) in votes:
                     results[vote] += 1
 
-                for poll_choice_id, count in results.items():
-                    cursor.execute('INSERT INTO poll_anonym_votes (poll_choice_id, poll_id, count) VALUES (?, ?, ?)', [poll_choice_id, poll_id, count])
+                await self.store.conn.executemany(
+                    'INSERT INTO poll_anonym_votes (poll_choice_id, poll_id, count) VALUES ($1, $2, $3)',
+                    [(poll_choice_id, poll_id, count) for poll_choice_id, count in results.items()])
 
-                cursor.execute('UPDATE polls SET status = 2 WHERE poll_id = ?', [poll_id])
-                cursor.execute('DELETE FROM poll_anonym_active_votes')
+                await self.store.conn.execute('UPDATE polls SET status = 2 WHERE poll_id = $1', poll_id)
+                await self.store.conn.execute('DELETE FROM poll_anonym_active_votes')
 
             else: # not anonymous
-                cursor.execute('UPDATE polls SET status = 2 WHERE poll_id = ?', [poll_id])
+                await self.store.conn.execute('UPDATE polls SET status = 2 WHERE poll_id = $1', poll_id)
 
             await send_text_to_room(
                 self.client, self.room.room_id,
@@ -760,36 +749,36 @@ class Command:
             await _close()
 
         elif self.args[0] == 'clear-display':
-            cursor.execute('UPDATE polls SET display = 0')
+            await self.store.conn.execute('UPDATE polls SET display = 0')
             await send_text_to_room(self.client, self.room.room_id, "Display cleared.")
 
         else:
             await send_text_to_room(self.client, self.room.room_id, "Unknown command. Send `poll` to see all available commands.  \n")
 
     async def _vote(self):
-
-        cursor = self.store.vconn.cursor()
-
-        cursor.execute('SELECT poll_id, question, anonymous, multiple_choice FROM polls WHERE status = 1')
-        poll_details = cursor.fetchone()
-        if await self._validate(poll_details, "There is no active poll."): return;
-
+        poll_details = await self.store.conn.fetchrow(
+            'SELECT poll_id, question, anonymous, multiple_choice FROM polls WHERE status = 1')
+        if poll_details is None:
+            return await self.send_text("There is no active poll.")
         poll_id, question, anonymous, multiple_choice = poll_details
 
-        cursor.execute('SELECT poll_choice_id, choice, marker FROM poll_choices WHERE poll_id = ?', [poll_id])
-        poll_choices = cursor.fetchall()
+        poll_choices = await self.store.conn.fetch(
+            'SELECT poll_choice_id, choice, marker FROM poll_choices WHERE poll_id = $1', poll_id)
         if await self._validate(poll_choices, "Internal server error: There are no choices for this poll!"): return;
 
         poll_choices.sort(key=lambda x: x[0])
 
         if not self.args:
             if anonymous:
-                cursor.execute('''SELECT poll_choice_id FROM poll_anonym_active_votes WHERE team_code = ?''', [self.user.team])
+                choice = await self.store.conn.fetch(
+                    'SELECT poll_choice_id FROM poll_anonym_active_votes WHERE team_code = $1',
+                    self.user.team)
             else: # not anonymous
-                cursor.execute('''SELECT poll_choice_id FROM poll_votes WHERE poll_id = ? AND team_code = ?''', [poll_id, self.user.team])
+                choice = await self.store.conn.fetch(
+                    'SELECT poll_choice_id FROM poll_votes WHERE poll_id = $1 AND team_code = $2',
+                    poll_id, self.user.team)
 
-            choice = cursor.fetchall()
-            choices = [c for (c,) in choice] if choice else []
+            choices = [c for (c,) in choice]
 
             text = self._get_poll_display(
                 poll_id = None,
@@ -818,9 +807,9 @@ class Command:
         if len(self.args) == 1:
             if self.args[0].lower() == 'delete':
                 if anonymous:
-                    cursor.execute('DELETE FROM poll_anonym_active_votes WHERE team_code = ?', [self.user.team])
+                    await self.store.conn.execute('DELETE FROM poll_anonym_active_votes WHERE team_code = $1', self.user.team)
                 else:
-                    cursor.execute('DELETE FROM poll_votes WHERE poll_id = ? AND team_code = ?', [poll_id, self.user.team])
+                    await self.store.conn.execute('DELETE FROM poll_votes WHERE poll_id = $1 AND team_code = $2', poll_id, self.user.team)
 
                 await send_text_to_room(self.client, self.room.room_id, "Your vote has been deleted.")
                 return
@@ -839,30 +828,21 @@ class Command:
             if await self._validate(choices[0] >= 1 and choices[0] <= len(poll_choices), f"Invalid vote: Your vote must be between 1 and {len(poll_choices)}."): return;
 
         if anonymous:
-            cursor.execute('DELETE FROM poll_anonym_active_votes WHERE team_code = ?', [self.user.team])
+            await self.store.conn.execute('DELETE FROM poll_anonym_active_votes WHERE team_code = $1', self.user.team)
 
             user_choices = [poll_choices[choice - 1][0] for choice in choices]
-            for choice in user_choices:
-                cursor.execute(
-                    '''
-                    INSERT INTO poll_anonym_active_votes (poll_choice_id, poll_id, team_code)
-                    VALUES (?, ?, ?)
-                    ''',
-                    [choice, poll_id, self.user.team]
-                )
+            await self.store.conn.executemany(
+                '''INSERT INTO poll_anonym_active_votes (poll_choice_id, poll_id, team_code)
+                VALUES ($1, $2, $3)''', zip(user_choices, repeat(poll_id), repeat(self.user.team)))
 
         else: # not anonymous
-            cursor.execute('DELETE FROM poll_votes WHERE poll_id = ? AND team_code = ?', [poll_id, self.user.team])
+            await self.store.conn.execute('DELETE FROM poll_votes WHERE poll_id = $1 AND team_code = $2', poll_id, self.user.team)
 
             user_choices = [poll_choices[choice - 1][0] for choice in choices]
-            for choice in user_choices:
-                cursor.execute(
-                    '''
-                    INSERT INTO poll_votes (poll_choice_id, poll_id, team_code, voted_by, voted_at)
-                    VALUES (?, ?, ?, ?, datetime("now", "localtime"))
-                    ''',
-                    [choice, poll_id, self.user.team, self.user.username]
-                )
+            await self.store.conn.executemany(
+                '''INSERT INTO poll_votes (poll_choice_id, poll_id, team_code, voted_by, voted_at)
+                VALUES ($1, $2, $3, $4)''',
+                zip(user_choices, repeat(poll_id), repeat(self.user.team), repeat(self.user.username)))
 
         text = self._get_poll_display(
             poll_id = None,
@@ -1022,12 +1002,9 @@ class Command:
         )
         obj_thread_id = self.event.event_id
 
-        cursor = self.store.vconn.cursor()
-        cursor.execute('''
-            INSERT INTO
-                listening_threads (obj_room_id, sc_room_id, obj_thread_id, sc_thread_id)
-                VALUES(?, ?, ?, ?)
-        ''', [self.room.room_id, sc_room_id, obj_thread_id, sc_message_response.event_id])
+        await self.store.conn.execute(
+            '''INSERT INTO listening_threads (obj_room_id, sc_room_id, obj_thread_id, sc_thread_id)
+            VALUES ($1, $2, $3, $4)''', self.room.room_id, sc_room_id, obj_thread_id, sc_message_response.event_id)
 
         await send_text_to_thread(
             self.client, self.room.room_id,

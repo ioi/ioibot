@@ -2,6 +2,7 @@ import logging
 from typing import Optional, Union
 
 from markdown import markdown
+
 from nio import (
     AsyncClient,
     ErrorResponse,

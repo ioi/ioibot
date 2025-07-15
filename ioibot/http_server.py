@@ -1,14 +1,16 @@
 import base64
 import logging
 import os
-import sqlite3
 
 from aiohttp import web
 from aiohttp_session import SimpleCookieStorage, get_session, setup
+import asyncpg
 import bcrypt
 from dotenv import load_dotenv
 import pandas as pd
 import yaml
+
+from .config import Config
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -59,16 +61,12 @@ async def basic_auth_middleware(app, handler):
     return middleware
 
 
-async def create_app():
+async def create_app(config: Config, conn: asyncpg.Pool):
     app = web.Application()
     setup(app, SimpleCookieStorage(max_age=3600))
     app.middlewares.append(basic_auth_middleware)
     routes = web.RouteTableDef()
-    conn = sqlite3.connect("ioibot.db")
-    cursor = conn.cursor()
-    with open("config.yaml", "r") as file_stream:
-        config = yaml.safe_load(file_stream)
-    teams_all = pd.read_csv(config["datasource"]["team_url"])
+    teams_all = pd.read_csv(config.team_url)
     teams = teams_all[teams_all['Voting'] == 1]
 
 
@@ -80,17 +78,16 @@ async def create_app():
     # return currently active poll result
     @routes.get("/polls/display")
     async def polls_active(request):
-        cursor.execute("SELECT poll_id, question, status, anonymous, multiple_choice FROM polls WHERE display = 1")
-        poll_exist = cursor.fetchone()
-        if not poll_exist:
-            result = {}
-            return web.json_response(result)
+        poll_details = await conn.fetchrow(
+            "SELECT poll_id, question, status, anonymous, multiple_choice FROM polls WHERE display = 1")
+        if poll_details is None:
+            return web.json_response({})
 
         votes = []
-        [poll_id, question, status, anonymous, multiple_choice] = poll_exist
+        [poll_id, question, status, anonymous, multiple_choice] = poll_details
 
-        cursor.execute("SELECT poll_choice_id, choice, marker FROM poll_choices WHERE poll_id = ?", [poll_id])
-        poll_choices = cursor.fetchall()
+        poll_choices = await conn.fetch(
+            "SELECT poll_choice_id, choice, marker FROM poll_choices WHERE poll_id = $1", poll_id)
         if not poll_choices:
             return web.HTTPInternalServerError()
 
@@ -102,26 +99,19 @@ async def create_app():
                 for (poll_choice_id, _, _) in poll_choices:
                     results[poll_choice_id] = 0
 
-                cursor.execute("SELECT poll_choice_id FROM poll_anonym_active_votes")
-                anonym_votes = cursor.fetchall()
-                if anonym_votes:
-                    for (vote,) in anonym_votes:
-                        results[vote] += 1
-
-                    votes = [{'count': count, 'choice_id': choice} for (choice, count) in results.items()]
-                else:
-                    votes = []
-
+                anonym_votes = await conn.fetch("SELECT poll_choice_id FROM poll_anonym_active_votes")
+                for (vote,) in anonym_votes:
+                    results[vote] += 1
+                vote_items = results.items()
             elif status == 2:
-                cursor.execute("SELECT poll_choice_id, count FROM poll_anonym_votes WHERE poll_id = ?", [poll_id])
-                votes_exists = cursor.fetchall()
-                votes = [{'count': count, 'choice_id': choice} for (choice, count) in votes_exists] if votes_exists else []
+                vote_items = await conn.fetch("SELECT poll_choice_id, count FROM poll_anonym_votes WHERE poll_id = $1", poll_id)
+            else:
+                vote_items = []
+            votes = [{'count': count, 'choice_id': choice} for (choice, count) in vote_items]
         else: # not anonymous
-            cursor.execute("SELECT poll_choice_id, team_code, voted_by, voted_at FROM poll_votes WHERE poll_id = ?", [poll_id])
-            votes_exists = cursor.fetchall()
-
-            votes = [{'team_code': f"({team_code}) {teams.loc[teams['Code'] == team_code, ['Name']].values[0][0]}", 'voted_by': voted_by, 'voted_at': voted_at, 'choice_id': choice} for (choice, team_code, voted_by, voted_at) in votes_exists] if votes_exists else []
-            missing_teams = teams.loc[~teams['Code'].isin([team_code for (_, team_code, _, _) in votes_exists]), ['Code', 'Name']]
+            vote_items = await conn.fetch("SELECT poll_choice_id, team_code, voted_by, voted_at FROM poll_votes WHERE poll_id = $1", poll_id)
+            votes = [{'team_code': f"({team_code}) {teams.loc[teams['Code'] == team_code, ['Name']].values[0][0]}", 'voted_by': voted_by, 'voted_at': voted_at, 'choice_id': choice} for (choice, team_code, voted_by, voted_at) in vote_items]
+            missing_teams = teams.loc[~teams['Code'].isin([team_code for (_, team_code, _, _) in vote_items]), ['Code', 'Name']]
             for _, row in missing_teams.iterrows():
                 votes.append({'team_code': f"({row['Code']}) {row['Name']}", 'voted_by': None, 'voted_at': None, 'choice_id': None})
 
@@ -141,9 +131,8 @@ async def create_app():
     app.router.add_static("/", "./")
     return app
 
-
-async def main():
-    app = await create_app()
+async def run_webapp(config: Config, conn: asyncpg.Pool):
+    app = await create_app(config, conn)
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, "0.0.0.0", 9000)

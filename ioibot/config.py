@@ -70,6 +70,9 @@ class Config:
                     f"storage.store_path '{self.store_path}' is not a directory"
                 )
 
+        # Database setup
+        self.db_url = self._get_cfg(["storage", "database"], required=True)
+
         # Matrix bot account setup
         self.user_id = self._get_cfg(["matrix", "user_id"], required=True)
         if not re.match("@.*:.*", self.user_id):
