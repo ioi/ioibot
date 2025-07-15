@@ -70,23 +70,6 @@ class Config:
                     f"storage.store_path '{self.store_path}' is not a directory"
                 )
 
-        # Database setup
-        database_path = self._get_cfg(["storage", "database"], required=True)
-
-        # Support both SQLite and Postgres backends
-        # Determine which one the user intends
-        sqlite_scheme = "sqlite://"
-        postgres_scheme = "postgres://"
-        if database_path.startswith(sqlite_scheme):
-            self.database = {
-                "type": "sqlite",
-                "connection_string": database_path[len(sqlite_scheme) :],
-            }
-        elif database_path.startswith(postgres_scheme):
-            self.database = {"type": "postgres", "connection_string": database_path}
-        else:
-            raise ConfigError("Invalid connection string for storage.database")
-
         # Matrix bot account setup
         self.user_id = self._get_cfg(["matrix", "user_id"], required=True)
         if not re.match("@.*:.*", self.user_id):
@@ -112,13 +95,6 @@ class Config:
         self.translation_acc_url = self._get_cfg(["datasource", "translation_acc_url"])
         self.objection_room_url = self._get_cfg(["datasource", "objection_room_url"])
         self.token_url = self._get_cfg(["datasource", "token_url"])
-        
-        # dropbox configuration
-        self.dropbox_url = self._get_cfg(["datasource", "dropbox_url"])
-        self.db_access_token = self._get_cfg(["dropbox_credential", "access_token"])
-        self.db_refresh_token = self._get_cfg(["dropbox_credential", "refresh_token"])
-        self.db_app_key = self._get_cfg(["dropbox_credential", "app_key"])
-        self.db_app_secret = self._get_cfg(["dropbox_credential", "app_secret"])
 
     def _get_cfg(
         self,

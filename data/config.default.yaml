@@ -22,12 +22,6 @@ matrix:
   device_name: ioibot
 
 storage:
-  # The database connection string
-  # For SQLite3, this would look like:
-  #     database: "sqlite://bot.db"
-  # For Postgres, this would look like:
-  #     database: "postgres://username:password@localhost/dbname?sslmode=disable"
-  database: "sqlite:///data/bot.db"
   # The path to a directory for internal bot storage
   # containing encryption keys, sync tokens, etc.
   store_path: "/data/store"
@@ -55,11 +49,4 @@ datasource:
   contestant_url: "https://docs.google.com/spreadsheets/d/1yzW-gbkdU_JOBIRGA6eo0utytEPha8oChDiZ06Jz-dI/export?format=csv&gid=1740907177"
   testing_acc_url: "https://docs.google.com/spreadsheets/d/1yzW-gbkdU_JOBIRGA6eo0utytEPha8oChDiZ06Jz-dI/export?format=csv&gid=442814869"
   translation_acc_url: "https://docs.google.com/spreadsheets/d/1yzW-gbkdU_JOBIRGA6eo0utytEPha8oChDiZ06Jz-dI/export?format=csv&gid=709144763"
-  dropbox_url: "https://docs.google.com/spreadsheets/d/1yzW-gbkdU_JOBIRGA6eo0utytEPha8oChDiZ06Jz-dI/export?format=csv&gid=1654937967"
   token_url: "https://docs.google.com/spreadsheets/d/1yzW-gbkdU_JOBIRGA6eo0utytEPha8oChDiZ06Jz-dI/export?format=csv&gid=480247230"
-
-dropbox_credential:
-  access_token: "sl.BKdHUR9ie8McUIYPrN3Mde0E8xaO4_39_JUbYvmQob5VgYArXqmOVjRG9B7BhgucEvhBzRJBJlkqQxsFtZfcN9d2rTqHxkg4C573Z9laJ6_wLZS9ouNj9OnprcoWCSof39dMwL90V_Y"
-  refresh_token: "nkJcgIRIb70AAAAAAAAAAbEFnsVZDSF6kP6CpDipdsMecfwnB_IGoFS3jL7-afiI"
-  app_key: "62x880o39xba2pd"
-  app_secret: "ekoz0sh72h5fa7o"

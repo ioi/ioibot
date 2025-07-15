@@ -1,21 +1,15 @@
-from enum import Enum
-from typing import NoReturn, Union
+import base64
+import logging
 import os
+import sqlite3
 
 from aiohttp import web
-import asyncio
-import aiohttp_session
-from aiohttp_session import setup, get_session, SimpleCookieStorage
-import base64
-
-import pandas as pd
-import sqlite3
-import yaml
+from aiohttp_session import SimpleCookieStorage, get_session, setup
 import bcrypt
-
 from dotenv import load_dotenv
+import pandas as pd
+import yaml
 
-import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
@@ -42,7 +36,7 @@ async def basic_auth_middleware(app, handler):
                     password = bytes(password, "utf-8")
                     if username == uname and bcrypt.hashpw(password, passw_hash) == passw_hash:
                         logger.info(f"Authentication successful for {request.remote}")
-                       
+
                         session["authenticated"] = True
                         return await handler(request)
 
@@ -94,12 +88,12 @@ async def create_app():
 
         votes = []
         [poll_id, question, status, anonymous, multiple_choice] = poll_exist
-        
+
         cursor.execute("SELECT poll_choice_id, choice, marker FROM poll_choices WHERE poll_id = ?", [poll_id])
         poll_choices = cursor.fetchall()
         if not poll_choices:
             return web.HTTPInternalServerError()
-        
+
         choices = [{'choice_id': choice_id, 'choice': choice, 'marker': marker} for (choice_id, choice, marker) in poll_choices]
 
         if anonymous:

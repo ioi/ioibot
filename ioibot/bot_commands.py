@@ -1,17 +1,17 @@
-import asyncio
-import functools
-import dropbox
-from datetime import datetime
+import logging
+import shlex
 
 from nio import AsyncClient, MatrixRoom, RoomMessageText
-from nio.responses import RoomGetEventError
 
-from ioibot.chat_functions import react_to_event, send_text_to_room, send_text_to_thread, make_pill
+from ioibot.chat_functions import (
+    make_pill,
+    react_to_event,
+    send_text_to_room,
+    send_text_to_thread,
+)
 from ioibot.config import Config
 from ioibot.storage import Storage
-import shlex;
 
-import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
@@ -157,7 +157,7 @@ class Command:
                     "Usage: `vote <3-letter-country-code> [choices]`"
                 )
                 return
-              if await self._validate(len(self.args) > 0, "Usage: `vote [choices]`"): return;  
+              if await self._validate(len(self.args) > 0, "Usage: `vote [choices]`"): return;
               team_code = self.args[0].upper()
               # if team code to upper does not exists
               if await self._validate(not self.store.teams.loc[self.store.teams['Code'] == team_code].empty, f"Team {team_code} not found."): return;
@@ -165,7 +165,7 @@ class Command:
               self.args = self.args[1:]
             else:
               team_code = self.user.team
-                
+
             team = self.store.teams.loc[self.store.teams['Code'] == team_code]
             if not team.empty and team.iloc[0]['Voting'] == 0:
                 await send_text_to_room(
@@ -176,19 +176,6 @@ class Command:
 
             self.user.team = team_code
             await self._vote()
-
-        elif self.command.startswith("invite"):
-            await send_text_to_room(self.client, self.room.room_id, "This command is turned off")
-            return
-
-            if not self.user.is_tc():
-                await send_text_to_room(
-                    self.client, self.room.room_id,
-                    "Only HTC can use this command."
-                )
-                return
-
-            await self.invite()
 
         elif self.command.startswith("accounts"):
             if not self.user.is_leader():
@@ -209,32 +196,6 @@ class Command:
                 return
 
             await self._objection()
-
-        elif self.command.startswith("dropbox"):
-            await send_text_to_room(self.client, self.room.room_id, "This command is turned off")
-            return
-
-            if not self.user.is_leader():
-                await send_text_to_room(
-                    self.client, self.room.room_id,
-                    "Only Team Leader and Deputy Leader can use this command."
-                )
-                return
-
-            await self._get_dropbox()
-
-        elif self.command.startswith("token"):
-            await send_text_to_room(self.client, self.room.room_id, "This command is turned off")
-            return
-
-            if not self.user.is_leader():
-                await send_text_to_room(
-                    self.client, self.room.room_id,
-                    "Only Team Leader and Deputy Leader can use this command."
-                )
-                return
-
-            await self._get_token()
 
         else:
             await self._unknown_command()
@@ -356,10 +317,10 @@ class Command:
             text += f'### [{poll_id}] {question}  \n'
         else:
             text += f'### {question}  \n'
-        
+
         text += f'anonymous: {"Yes" if anonymous else "No"}  \n'
         text += f'multiple choice: {"Yes" if multiple_choice else "No"}  \n'
-        
+
         if status is not None:
             text += f'status: {["inactive", "active", "closed"][status]}  \n'
 
@@ -377,7 +338,7 @@ class Command:
                 text += f'- {marker}/{choice}  \n'
 
         return text
-  
+
 
     @assume(lambda self: self.args, (
                 "Usage:  \n\n"
@@ -394,14 +355,14 @@ class Command:
                 '    - `-m, --multiple-choice`: allow multiple choices  \n'
                 '    - `-d, --display`: set to show  \n'
                 '    - `-s, --start`: set to active if no other pool is open  \n\n'
-                
+
                 'Note:  if an argument consists of multiple words you can wrap it in double quotes, otherwise you don\'t have to.  \n\n'
-                
+
                 "Examples:  \n"
                 '- `poll new "What is your favorite color?" 🟥/Red 🟧/Orange 🟨/Yellow 🟩/Green 🟦/Blue`: creates a poll  \n'
                 '- `poll new -ds "Question?" "✅/Vote for motion" "❌/Vote against motion" "➖/Abstain"`: creates, displays and starts a poll   \n'
                 '- `poll new --anonymous "What is your favorite number?" "1️⃣/One" "2️⃣/Two" "3️⃣/Three" "4️⃣/Four"`: creates an anonymous poll   \n'
-                
+
                 '- `poll new  --multiple-choice --anonymous "What is your favorite letter?" "A" "B" "🅾️/O"`: creates an anonym, multiple choice poll   \n'
                 '- `poll new "Is this a question?" yes no abstain"`: creates a poll with the default markers  \n'
                 '- `poll update 1 -ma "What is 1+1?" one two three`: changes the existing poll 1 to be anonym and multiple choice, also rewrites the question and answers  \n'
@@ -482,7 +443,7 @@ class Command:
                 VALUES (?, ?, ?, ?, ?)''',
                 [question, status, display, anonymous, multiple_choice]
             )
-            
+
             poll_id = cursor.lastrowid
 
             for choice, marker in zip(choices, markers):
@@ -493,7 +454,7 @@ class Command:
                 )
 
             text = self._get_poll_display(
-                poll_id = poll_id, 
+                poll_id = poll_id,
                 question = question,
                 status = status,
                 display = display,
@@ -502,7 +463,7 @@ class Command:
                 poll_choices = list(zip(range(len(choices)), choices, markers)),
                 user_choices = None,
             )
-            
+
 
             if start == 1 and status == 0:
                 text += '\n\n'
@@ -521,7 +482,7 @@ class Command:
             (question_db, status) = poll_exists
 
             input_poll = ' '.join(args)
-            
+
             try:
               (arguments, err, (anonymous, multiple_choice, display, start)) = _get_options(shlex.split(input_poll))
             except Exception as e:
@@ -530,7 +491,7 @@ class Command:
                   err_message = e.message
               await send_text_to_room(self.client, self.room.room_id, f"Format Error: {err_message}")
               return
-            
+
             if anonymous == 0 and multiple_choice == 0 and start == 0 and len(arguments) == 0 and display == 1: # only the display is changed
                 cursor.execute('UPDATE polls SET display = CASE WHEN poll_id = ? THEN 1 ELSE 0 END', [poll_id])
                 await send_text_to_room(self.client, self.room.room_id, f'Poll {poll_id} is now displayed.  \n')
@@ -541,7 +502,7 @@ class Command:
             if len(arguments) <= 1: # only update the question
                 if display:
                     cursor.execute('UPDATE polls SET display = 0')
-    
+
                 question = arguments[0] if len(arguments) == 1 else question_db
 
                 cursor.execute(
@@ -555,7 +516,7 @@ class Command:
                 if await self._validate(poll_choices, f"Internal server error while updating a poll.  \n"): return;
 
                 text = self._get_poll_display(
-                    poll_id = poll_id, 
+                    poll_id = poll_id,
                     question = question,
                     status = status,
                     display = display,
@@ -575,8 +536,8 @@ class Command:
                     text += err
 
                 await send_text_to_room(self.client, self.room.room_id, text)
-                return       
-           
+                return
+
             if await self._validate(len(arguments) >= 3, "Command is invalid, there must be a question and at least 2 choices. Send `poll` to see all commands."): return;
 
             question = arguments[0]
@@ -617,9 +578,9 @@ class Command:
 
 
             text = self._get_poll_display(
-                poll_id = poll_id, 
+                poll_id = poll_id,
                 question = question,
-                status = status, 
+                status = status,
                 display = display,
                 anonymous = anonymous,
                 multiple_choice = multiple_choice,
@@ -672,14 +633,14 @@ class Command:
                 poll_details = cursor.fetchone()
 
                 if await self._validate(poll_details, "There is no active poll."): return;
-                
+
                 poll_id, question, status, display, anonymous, multiple_choice = poll_details
                 cursor.execute('SELECT poll_choice_id, choice, marker FROM poll_choices WHERE poll_id = ?', [poll_id])
                 poll_choices = cursor.fetchall()
                 if await self._validate(poll_choices, "Internal server error: There are no choices for this poll!"): return;
 
                 text = self._get_poll_display(
-                    poll_id = poll_id, 
+                    poll_id = poll_id,
                     question = question,
                     status = status,
                     display = display,
@@ -705,10 +666,10 @@ class Command:
             cursor.execute('UPDATE polls SET status = 1 WHERE poll_id = ?', [poll_id])
             cursor.execute('SELECT question, status, display, anonymous, multiple_choice FROM polls WHERE poll_id = ?',[poll_id])
 
-            
+
             poll_details = cursor.fetchone()
             if await self._validate(poll_details, f"Poll {poll_id} does not exist.  \n\nSend `poll list` to see all created polls.  \n"): return;
-            
+
             question, status, display, anonymous, multiple_choice = poll_details
 
             cursor.execute('SELECT poll_choice_id, choice, marker FROM poll_choices WHERE poll_id = ?', [poll_id])
@@ -731,7 +692,7 @@ class Command:
             cursor.execute('SELECT poll_id, anonymous, multiple_choice FROM polls WHERE status = 1')
             active_exist = cursor.fetchall()
             if await self._validate(active_exist, "There is no active poll."): return;
-            
+
             poll_id, anonymous, multiple_choice = active_exist[0]
 
             if anonymous:
@@ -746,14 +707,14 @@ class Command:
                 votes = cursor.fetchall()
                 for (vote,) in votes:
                     results[vote] += 1
-                
+
                 for poll_choice_id, count in results.items():
                     cursor.execute('INSERT INTO poll_anonym_votes (poll_choice_id, poll_id, count) VALUES (?, ?, ?)', [poll_choice_id, poll_id, count])
 
                 cursor.execute('UPDATE polls SET status = 2 WHERE poll_id = ?', [poll_id])
                 cursor.execute('DELETE FROM poll_anonym_active_votes')
 
-            else: # not anonymous 
+            else: # not anonymous
                 cursor.execute('UPDATE polls SET status = 2 WHERE poll_id = ?', [poll_id])
 
             await send_text_to_room(
@@ -801,24 +762,24 @@ class Command:
         elif self.args[0] == 'clear-display':
             cursor.execute('UPDATE polls SET display = 0')
             await send_text_to_room(self.client, self.room.room_id, "Display cleared.")
-            
+
         else:
             await send_text_to_room(self.client, self.room.room_id, "Unknown command. Send `poll` to see all available commands.  \n")
 
     async def _vote(self):
-        
+
         cursor = self.store.vconn.cursor()
 
         cursor.execute('SELECT poll_id, question, anonymous, multiple_choice FROM polls WHERE status = 1')
         poll_details = cursor.fetchone()
         if await self._validate(poll_details, "There is no active poll."): return;
-        
+
         poll_id, question, anonymous, multiple_choice = poll_details
 
         cursor.execute('SELECT poll_choice_id, choice, marker FROM poll_choices WHERE poll_id = ?', [poll_id])
         poll_choices = cursor.fetchall()
         if await self._validate(poll_choices, "Internal server error: There are no choices for this poll!"): return;
-        
+
         poll_choices.sort(key=lambda x: x[0])
 
         if not self.args:
@@ -831,9 +792,9 @@ class Command:
             choices = [c for (c,) in choice] if choice else []
 
             text = self._get_poll_display(
-                poll_id = None, 
+                poll_id = None,
                 question = question,
-                status = None, 
+                status = None,
                 display = None,
                 anonymous = anonymous,
                 multiple_choice = multiple_choice,
@@ -863,12 +824,12 @@ class Command:
 
                 await send_text_to_room(self.client, self.room.room_id, "Your vote has been deleted.")
                 return
-            
+
         choices = []
         if multiple_choice:
             if await self._validate(all([len(choice) < 4 and choice.isdigit() for choice in self.args]), "Invalid vote: Every vote must be an integer."): return;
             choices = [int(choice) for choice in self.args]
-            
+
             if await self._validate(all([choice >= 1 and choice <= len(poll_choices) for choice in choices]), f"Invalid vote: Every vote must be between 1 and {len(poll_choices)}."): return;
             if await self._validate(all([choices.count(choice) == 1 for choice in choices]), "Invalid vote: There are duplicates in your vote."): return;
         else:
@@ -889,7 +850,7 @@ class Command:
                     ''',
                     [choice, poll_id, self.user.team]
                 )
-                
+
         else: # not anonymous
             cursor.execute('DELETE FROM poll_votes WHERE poll_id = ? AND team_code = ?', [poll_id, self.user.team])
 
@@ -902,11 +863,11 @@ class Command:
                     ''',
                     [choice, poll_id, self.user.team, self.user.username]
                 )
-            
+
         text = self._get_poll_display(
-            poll_id = None, 
+            poll_id = None,
             question = question,
-            status = None, 
+            status = None,
             display = None,
             anonymous = anonymous,
             multiple_choice = multiple_choice,
@@ -920,53 +881,6 @@ class Command:
     async def _refresh(self):
         self.store.reload_csv()
         await send_text_to_room(self.client, self.room.room_id, "Successfully refreshed!")
-
-    async def invite(self):
-        """Invite all accounts with role to room"""
-        if not self.args:
-            text = (
-                "Usage:"
-                "  \n`invite <role> <room id>`: Invite all accounts with role to room"
-                "  \n  \nExamples:"
-                "  \n- `invite translators !egvUrNsxzCYFUtUmEJ:matrix.ioi2022.id`"
-                "  \n- `invite online !egvUrNsxzCYFUtUmEJ:matrix.ioi2022.id`"
-            )
-            await send_text_to_room(self.client, self.room.room_id, text)
-            return
-
-
-        if self.args[0].lower() == 'translators':
-            for index, acc in self.store.leaders.iterrows():
-                if acc['Matrix Exists'] == 'Y':
-                    if ((acc['Role'] == 'Guest' or acc['Role'] == 'Remote Adjunct (not on site)')
-                        and acc['Translating'] == 0
-                    ):
-                        continue
-
-                    await self.client.room_invite(
-                        self.args[1],
-                        f"@{acc['UserID']}:{self.config.homeserver_url[8:]}"
-                    )
-                    await asyncio.sleep(0.25)
-                    
-        elif self.args[0].lower() == 'online':
-            online_countries = set()
-            for index, acc in self.store.contestants.iterrows():
-                if acc['Online'] == 1:
-                    online_countries.add(acc['RealTeamCode'])
-
-            leaders = self.store.leaders
-            for country in online_countries:
-                leader_accounts = leaders[leaders['RealTeamCode'] == country]
-                for index, acc in leader_accounts.iterrows():
-                    if acc['Matrix Exists'] == 'Y':
-                        await self.client.room_invite(
-                            self.args[1],
-                            f"@{acc['UserID']}:{self.config.homeserver_url[8:]}"
-                        )
-                        await asyncio.sleep(0.25)
-
-        await send_text_to_room(self.client, self.room.room_id, "Successfully invited!")
 
     async def _show_accounts(self):
         if not self.args:
@@ -1092,7 +1006,7 @@ class Command:
         sc_room_id = sc_room_id.values[0][0]
 
         original_post = f"https://matrix.to/#/{self.room.room_id}/{self.event.event_id}?via={self.config.homeserver_url}"
-        
+
         sc_message = (
             f"{'#### Major' if severity == 'major' else '##### *Minor*' }  \n\n"
             f"{content}  \n\n"
@@ -1107,88 +1021,19 @@ class Command:
             "Please write any further additions for this objection in this thread."
         )
         obj_thread_id = self.event.event_id
-        
+
         cursor = self.store.vconn.cursor()
         cursor.execute('''
-            INSERT INTO 
+            INSERT INTO
                 listening_threads (obj_room_id, sc_room_id, obj_thread_id, sc_thread_id)
                 VALUES(?, ?, ?, ?)
         ''', [self.room.room_id, sc_room_id, obj_thread_id, sc_message_response.event_id])
-        
+
         await send_text_to_thread(
             self.client, self.room.room_id,
             objection_room_text,
             reply_to_event_id = obj_thread_id
         )
-
-
-    async def _get_dropbox(self):
-        dropbox_link = self.store.dropbox_url
-        team_code = self.user.team
-        real_team_code = self.user.real_team
-        team_country = self.user.country
-
-        # yyyy/mm/dd format
-        if(datetime.now() < datetime(2022, 8, 10)):
-            day = 0
-        elif(datetime.now() < datetime(2022, 8, 12)):
-            day = 1
-        else:
-            day = 2
-
-        url = dropbox_link.loc[dropbox_link['RealTeamCode'] == real_team_code, ["Day " + str(day)]]
-        if url.empty:
-            await send_text_to_room(
-                self.client, self.room.room_id,
-                f"No Dropbox file request link found for team {team_code} ({team_country}). Plase contact HTC for details."
-            )
-            return
-        url = url.values[0]
-
-        text = f"Dropbox upload link for Day {day} for team {team_code} ({team_country}):  \n\n"
-        text += url + "  \n\n"
-
-        dbx = self.store.dbx
-        try:
-            res = dbx.files_list_folder(f"/Uploads/Day {day}/{real_team_code}")
-        except Exception as e:
-            await send_text_to_room(self.client, self.room.room_id, "No upload folder found.")
-            return 
-
-        if not res.entries:
-            text += "The folder is empty. Please upload the required files through the link provided above."
-            await send_text_to_room(self.client, self.room.room_id, text)
-            return
-
-        text += "List of successfully uploaded files:  \n"
-
-        def list_directory(dbx, path, prefix):
-            nonlocal text
-            res = dbx.files_list_folder(path)
-            for entry in res.entries:
-                if (isinstance(entry, dropbox.files.FolderMetadata)):
-                    list_directory(dbx, path + "/" + entry.name, prefix + entry.name + "/")
-                else:
-                    text += f"- `{prefix}{entry.name}`  \n"
-
-        list_directory(dbx, f"/Uploads/Day {day}/{real_team_code}", "")
-
-        await send_text_to_room(self.client, self.room.room_id, text)
-
-    async def _get_token(self):
-        tokens = self.store.tokens
-        token = tokens.loc[tokens['TeamCode'] == self.user.team]
-
-        if token.empty:
-            await send_text_to_room(
-                self.client, self.room.room_id,
-                "There is no token for your team."
-            )
-        else:
-            await send_text_to_room(
-                self.client, self.room.room_id,
-                f"Token for team {self.user.team}: `{token.iloc[0, 1]}`"
-            )
 
     async def _unknown_command(self):
         await send_text_to_room(
@@ -1201,7 +1046,7 @@ class Command:
         """
         Check if pred is true, if not send message to room
         If a function is given than it will be called and if it throws an exception it will treated as validation failure
-        
+
         Returns:
             True if the caller should interrupt the command
 
@@ -1212,7 +1057,7 @@ class Command:
         if not pred:
             await send_text_to_room(self.client, self.room.room_id, message)
             return True
-        
+
         return False
 
 def exists(n):

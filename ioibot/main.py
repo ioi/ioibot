@@ -3,10 +3,6 @@ import sys
 from time import sleep
 
 from aiohttp import ClientConnectionError, ServerDisconnectedError
-
-from ioibot.callbacks import Callbacks
-from ioibot.config import Config
-from ioibot.storage import Storage
 from nio import (
     AsyncClient,
     AsyncClientConfig,
@@ -17,6 +13,10 @@ from nio import (
     RoomMessageText,
     UnknownEvent,
 )
+
+from ioibot.callbacks import Callbacks
+from ioibot.config import Config
+from ioibot.storage import Storage
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +35,7 @@ async def main():
     config = Config(config_path)
 
     # Configure the database
-    store = Storage(config.database, config)
+    store = Storage(config)
 
     # Configuration options for the AsyncClient
     client_config = AsyncClientConfig(
