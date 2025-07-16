@@ -1,4 +1,33 @@
 #!/usr/bin/env bash
+# IOIBot Setup Script
+#
+# This script installs dependencies, creates a Python virtual environment,
+# copies the default config file if missing, and generates a systemd user
+# service to run the bot.
+#
+# USAGE:
+#   ./install-and-setup.sh
+#
+# WHAT IT DOES:
+#   - Creates a Python virtual environment in ./env
+#   - Installs project dependencies with pip
+#   - Verifies that data/config.yaml exists
+#   - Generates a systemd user service at ~/.config/systemd/user/ioibot2025.service
+#
+# TO START THE BOT:
+#   systemctl --user start ioibot2025.service
+#
+# TO VIEW LOGS:
+#   journalctl --user -u ioibot2025.service -f
+#
+# NOTES:
+#   - You must edit 'data/sample.config.yaml' and save it as 'data/config.yaml'
+#     before starting the bot.
+#   - You must set the environment variables VOTING_USERNAME and VOTING_PASSWORD
+#     in the systemd service file:
+#     ~/.config/systemd/user/ioibot2025.service
+#     These are required for the bot to work properly.
+
 set -euo pipefail
 
 # Variable names
