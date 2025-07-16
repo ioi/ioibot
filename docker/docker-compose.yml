@@ -1,67 +1,60 @@
-version: '3.1' # specify docker-compose version
-
-volumes:
-  # Set up with `docker volume create ...`. See docker/README.md for more info.
-  data_volume:
-    external: true
-  pg_data_volume:
-
 services:
-  # Runs from the latest release
-  my-project-name:
-    image: somebody/my-project-name
-    restart: always
-    volumes:
-      - data_volume:/data
-    # Used for allowing connections to homeservers hosted on the host machine
-    # (while docker host mode is still broken on Linux).
-    #
-    # Defaults to 127.0.0.1 and is set in docker/.env
-    extra_hosts:
-      - "localhost:${HOST_IP_ADDRESS}"
-
-  # Builds and runs an optimized container from local code
-  local-checkout:
+  ioibot:
     build:
       context: ..
       dockerfile: docker/Dockerfile
-      # Build arguments may be specified here
-      # args:
-      #  PYTHON_VERSION: 3.8
+      args:
+        PYTHON_VERSION: 3.12
+        LIBOLM_VERSION: 3.2.16
+    container_name: matrixbot
+    restart: always
+    working_dir: /data
     volumes:
-      - data_volume:/data
-    # Used for allowing connections to homeservers hosted on the host machine
-    # (while docker host networking mode is still broken on Linux).
-    #
-    # Defaults to 127.0.0.1 and is set in docker/.env
+      - ../:/data
+      - ../data/config.default.yaml:/data/config.yaml
+    environment:
+      VOTING_USERNAME: ${VOTING_USERNAME}
+      VOTING_PASSWORD: ${VOTING_PASSWORD}
+      HOST_IP_ADDRESS: ${HOST_IP_ADDRESS}  
+    depends_on:
+      - postgres
+    ports:
+      - "9000:9000"      
     extra_hosts:
       - "localhost:${HOST_IP_ADDRESS}"
 
   # Builds and runs a development container from local code
-  local-checkout-dev:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile.dev
-      # Build arguments may be specified here
-      # args:
-      #  PYTHON_VERSION: 3.8
-    volumes:
-      - data_volume:/data
+  ioibot-dev:
+      build:
+        context: ..
+        dockerfile: docker/Dockerfile.dev
+        # Build arguments may be specified here
+        # args:
+        #  PYTHON_VERSION: 3.8
+      volumes:
+        - data_volume:/data
 
-    # Used for allowing connections to homeservers hosted on the host machine
-    # (while docker host networking mode is still broken on Linux).
-    #
-    # Defaults to 127.0.0.1 and is set in docker/.env
-    extra_hosts:
-      - "localhost:${HOST_IP_ADDRESS}"
-    ports:
-      - "9000:9000"
-      
-  # Starts up a postgres database
+      # Used for allowing connections to homeservers hosted on the host machine
+      # (while docker host networking mode is still broken on Linux).
+      #
+      # Defaults to 127.0.0.1 and is set in docker/.env
+      extra_hosts:
+        - "localhost:${HOST_IP_ADDRESS}"
+      ports:
+        - "9000:9000"
+
   postgres:
-    image: postgres
+    image: postgres:15
+    container_name: matrixbot_postgres
     restart: always
     volumes:
       - pg_data_volume:/var/lib/postgresql/data
+      - ./ioibot/init.sql:/docker-entrypoint-initdb.d/init.sql
     environment:
-        POSTGRES_PASSWORD: somefancypassword
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
+
+volumes:
+  pg_data_volume:
+  data_volume:
