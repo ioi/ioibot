@@ -17,16 +17,12 @@ set -ex
 # Download the specified version of libolm
 git clone -b "$1" https://gitlab.matrix.org/matrix-org/olm.git olm && cd olm
 
-# Build libolm
-cmake . -Bbuild
+cmake -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release -Bbuild .
+
 cmake --build build
 
-# Install
-make install
+make -C build install
 
-# Build the python3 bindings
-cd python && make olm-python3
+cd python
 
-# Install python3 bindings
-mkdir -p "$2" || true
-DESTDIR="$2" make install-python3
+python3 -m pip install .
