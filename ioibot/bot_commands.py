@@ -324,10 +324,10 @@ class Command:
         text += f'anonymous: {"Yes" if anonymous else "No"}  \n'
         text += f'multiple choice: {"Yes" if multiple_choice else "No"}  \n'
 
-        if status is not None:
+        if status:
             text += f'status: {["inactive", "active", "closed"][status]}  \n'
 
-        if display is not None:
+        if display:
             text += f'{"Results are shown" if display else "Results are hidden"}  \n'
 
         text += '\n'
@@ -400,10 +400,10 @@ class Command:
                 else:
                     arguments.append(arg.strip())
 
-            anonymous        = int(bool(options & ANONYM))
-            multiple_choice  = int(bool(options & MULTIPLE))
-            display          = int(bool(options & DISPLAY))
-            start            = int(bool(options & START))
+            anonymous        = bool(options & ANONYM)
+            multiple_choice  = bool(options & MULTIPLE)
+            display          = bool(options & DISPLAY)
+            start            = bool(options & START)
 
             return (arguments, err, (anonymous, multiple_choice, display, start))
 
@@ -436,7 +436,7 @@ class Command:
                 status = 1 if poll_id is None else 0
 
             if display:
-                await self.store.conn.execute('UPDATE polls SET display = 0')
+                await self.store.conn.execute('UPDATE polls SET display = false')
 
             poll_id = await self.store.conn.fetchval(
                 '''INSERT INTO polls (question, status, display, anonymous, multiple_choice)
@@ -486,8 +486,8 @@ class Command:
               await send_text_to_room(self.client, self.room.room_id, f"Format Error: {err_message}")
               return
 
-            if anonymous == 0 and multiple_choice == 0 and start == 0 and len(arguments) == 0 and display == 1: # only the display is changed
-                await self.store.conn.execute('UPDATE polls SET display = CASE WHEN poll_id = $1 THEN 1 ELSE 0 END', poll_id)
+            if not anonymous and not multiple_choice and not start and len(arguments) == 0 and display == 1: # only the display is changed
+                await self.store.conn.execute('UPDATE polls SET display = (poll_id = $1)', poll_id)
                 await send_text_to_room(self.client, self.room.room_id, f'Poll {poll_id} is now displayed.  \n')
                 return
 
@@ -495,7 +495,7 @@ class Command:
 
             if len(arguments) <= 1: # only update the question
                 if display:
-                    await self.store.conn.execute('UPDATE polls SET display = 0', poll_id)
+                    await self.store.conn.execute('UPDATE polls SET display = false', poll_id)
 
                 question = arguments[0] if len(arguments) == 1 else question_db
 
@@ -749,7 +749,7 @@ class Command:
             await _close()
 
         elif self.args[0] == 'clear-display':
-            await self.store.conn.execute('UPDATE polls SET display = 0')
+            await self.store.conn.execute('UPDATE polls SET display = false')
             await send_text_to_room(self.client, self.room.room_id, "Display cleared.")
 
         else:
