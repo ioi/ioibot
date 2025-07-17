@@ -72,7 +72,7 @@ function updateChart(status) {
 }
 
 function fetchPollResult() {
-  $.get("/polls/display", function(json_data) {
+  $.get("/api/polls", function(json_data) {
 
     const get_data = function() {
       if ($.isEmptyObject(json_data)) { return false; }

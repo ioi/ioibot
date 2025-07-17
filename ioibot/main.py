@@ -73,7 +73,7 @@ async def async_main():
     async with store.db_connect():
         await asyncio.gather(
                 loop(config, client),
-                run_webapp(config, store.conn))
+                run_webapp(store))
 
 async def loop(config, client):
     # Keep trying to reconnect on failure (with some time in-between)
