@@ -50,7 +50,7 @@ async def polls_active(req: web.Request):
         votes = [{'count': count, 'choice_id': choice} for (choice, count) in vote_items]
     else: # not anonymous
         vote_items = await conn.fetch("SELECT poll_choice_id, team_code, voted_by, voted_at FROM poll_votes WHERE poll_id = $1", poll_id)
-        votes = [{'team_code': f"({team_code}) {teams.loc[teams['Code'] == team_code, ['Name']].values[0][0]}", 'voted_by': voted_by, 'voted_at': voted_at, 'choice_id': choice} for (choice, team_code, voted_by, voted_at) in vote_items]
+        votes = [{'team_code': f"({team_code}) {teams.loc[teams['Code'] == team_code, ['Name']].values[0][0]}", 'voted_by': voted_by, 'voted_at': voted_at.isoformat(), 'choice_id': choice} for (choice, team_code, voted_by, voted_at) in vote_items]
         missing_teams = teams.loc[~teams['Code'].isin([team_code for (_, team_code, _, _) in vote_items]), ['Code', 'Name']]
         for _, row in missing_teams.iterrows():
             votes.append({'team_code': f"({row['Code']}) {row['Name']}", 'voted_by': None, 'voted_at': None, 'choice_id': None})
