@@ -21,7 +21,7 @@
 #   journalctl --user -u ioibot.service -f
 #
 # NOTES:
-#   - You must edit 'data/sample.config.yaml' and save it as 'data/config.yaml'
+#   - You must edit 'etc/sample.config.yaml' and save it as 'data/config.yaml'
 #     before starting the bot.
 #   - The systemd service file will be created at:
 #     ~/.config/systemd/user/ioibot.service
@@ -36,7 +36,7 @@ DATA_DIR="$PROJECT_DIR/data"
 VENV="$PROJECT_DIR/venv"
 BOT="$VENV/bin/ioibot"
 CONFIG="$DATA_DIR/config.yaml"
-TEMPLATE="$DATA_DIR/sample.config.yaml"
+TEMPLATE="$PROJECT_DIR/etc/sample.config.yaml"
 INIT_SQL="$PROJECT_DIR/ioibot/init.sql"
 
 if [ ! -d "$VENV" ]; then
