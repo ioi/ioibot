@@ -55,7 +55,7 @@ if [ ! -f "$CONFIG" ]; then
     echo "Please edit the sample.config.yaml file and save it as config.yaml."
     exit 1
   else
-    echo "Error: No config.yaml or sample.config.yaml found in $DATA_DIR"
+    echo "Error: Neither $CONFIG nor $TEMPLATE found"
     exit 1
   fi
 fi
@@ -68,6 +68,9 @@ else
   echo "$INIT_SQL not found. Skipping database initialization."
   echo "Please initialize your database manually."
 fi
+
+# Create data store
+mkdir -p "$DATA_DIR/store"
 
 # Create systemd user directory
 mkdir -p "$SYSTEMD_DIR"
