@@ -840,7 +840,7 @@ class Command:
 
             user_choices = [poll_choices[choice - 1][0] for choice in choices]
             await self.store.conn.executemany(
-                '''INSERT INTO poll_votes (poll_choice_id, poll_id, team_code, voted_by, voted_at)
+                '''INSERT INTO poll_votes (poll_choice_id, poll_id, team_code, voted_by)
                 VALUES ($1, $2, $3, $4)''',
                 zip(user_choices, repeat(poll_id), repeat(self.user.team), repeat(self.user.username)))
 
