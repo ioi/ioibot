@@ -112,7 +112,7 @@ class Config:
             ConfigError: If required is True and the object is not found (and there is
                 no default value provided), a ConfigError will be raised.
         """
-        # Sift through the the config until we reach our option
+        # Sift through the config until we reach our option
         config = self.config_dict
         for name in path:
             config = config.get(name)

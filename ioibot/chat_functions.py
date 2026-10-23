@@ -39,7 +39,7 @@ async def send_text_to_thread(
             Defaults to true.
 
         reply_to_event_id: Whether this message is a reply to another event. The event
-            ID this is message is a reply to.
+            ID this message is a reply to.
 
     Returns:
         A RoomSendResponse if the request was successful, else an ErrorResponse.
@@ -98,7 +98,7 @@ async def send_text_to_room(
             Defaults to true.
 
         reply_to_event_id: Whether this message is a reply to another event. The event
-            ID this is message is a reply to.
+            ID this message is a reply to.
 
     Returns:
         A RoomSendResponse if the request was successful, else an ErrorResponse.
